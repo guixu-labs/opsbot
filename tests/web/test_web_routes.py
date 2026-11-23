@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
@@ -168,7 +169,15 @@ async def test_workflow_session_rejection_maps_409(route_fn, method) -> None:
 
 
 async def test_send_restores_evicted_session_before_inject_and_resume() -> None:
-    session = SimpleNamespace(state=SimpleNamespace(value="idle"))
+    @asynccontextmanager
+    async def guard():
+        yield
+
+    session = SimpleNamespace(
+        state=SimpleNamespace(value="idle"),
+        is_query_active=False,
+        manual_prompt_guard=guard,
+    )
     current = [None]
     steps: list[str] = []
 
