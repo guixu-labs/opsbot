@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 jobs:
   backend:
@@ -37,6 +38,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 校验发布标签与包版本
+        if: github.ref_type == 'tag'
+        run: |
+          expected_tag="v$(uv version --short)"
+          if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
+            echo "::error::发布标签 $GITHUB_REF_NAME 与包版本对应的 $expected_tag 不一致"
+            exit 1
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -49,6 +59,17 @@ jobs:
 
       - name: 构建发行包
         run: uv build
+
+      - name: 上传发行包
+        if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+          if-no-files-found: error
+          overwrite: true
 
   install:
     runs-on: ubuntu-latest
