@@ -1,3 +1,3 @@
 # axcor_sha 为 pyproject.toml 中 axcor Git 标签指向的提交，供 install.sh 构建内核与插件。
 # 更新标签后重新执行 uv lock，并确认 uv.lock 解析出的提交与 axcor_sha 一致。
-axcor_sha: 2753c0fd2991c7e54a210fbca08964b229f95b31
+axcor_sha: c37cdb445d73d1b6b997289b7d1fba118f34732b

@@ -2407,13 +2407,13 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115,<0.137" },
     { name = "sse-starlette", specifier = ">=3.3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
-    { name = "workflow-controller-kernel", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fkernel&tag=v0.1.0" },
-    { name = "workflow-controller-plugin-agent-traceback", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fagent-traceback&tag=v0.1.0" },
-    { name = "workflow-controller-plugin-breather", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fbreather&tag=v0.1.0" },
-    { name = "workflow-controller-plugin-fake-driver", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Ffake-driver&tag=v0.1.0" },
-    { name = "workflow-controller-plugin-file-provenance", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Ffile-provenance&tag=v0.1.0" },
-    { name = "workflow-controller-plugin-graph", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fgraph&tag=v0.1.0" },
-    { name = "workflow-controller-plugin-staged-pipeline", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fstaged-pipeline&tag=v0.1.0" },
+    { name = "workflow-controller-kernel", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fkernel&tag=v0.2.0" },
+    { name = "workflow-controller-plugin-agent-traceback", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fagent-traceback&tag=v0.2.0" },
+    { name = "workflow-controller-plugin-breather", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fbreather&tag=v0.2.0" },
+    { name = "workflow-controller-plugin-fake-driver", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Ffake-driver&tag=v0.2.0" },
+    { name = "workflow-controller-plugin-file-provenance", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Ffile-provenance&tag=v0.2.0" },
+    { name = "workflow-controller-plugin-graph", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fgraph&tag=v0.2.0" },
+    { name = "workflow-controller-plugin-staged-pipeline", git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fstaged-pipeline&tag=v0.2.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2431,7 +2431,7 @@ dev = [
 [[package]]
 name = "workflow-controller-kernel"
 version = "1.0.0"
-source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fkernel&tag=v0.1.0#2753c0fd2991c7e54a210fbca08964b229f95b31" }
+source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fkernel&tag=v0.2.0#c37cdb445d73d1b6b997289b7d1fba118f34732b" }
 dependencies = [
     { name = "aiohttp" },
     { name = "click" },
@@ -2449,7 +2449,7 @@ dependencies = [
 [[package]]
 name = "workflow-controller-plugin-agent-traceback"
 version = "0.1.0"
-source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fagent-traceback&tag=v0.1.0#2753c0fd2991c7e54a210fbca08964b229f95b31" }
+source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fagent-traceback&tag=v0.2.0#c37cdb445d73d1b6b997289b7d1fba118f34732b" }
 dependencies = [
     { name = "workflow-controller-kernel" },
 ]
@@ -2457,7 +2457,7 @@ dependencies = [
 [[package]]
 name = "workflow-controller-plugin-breather"
 version = "0.1.0"
-source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fbreather&tag=v0.1.0#2753c0fd2991c7e54a210fbca08964b229f95b31" }
+source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fbreather&tag=v0.2.0#c37cdb445d73d1b6b997289b7d1fba118f34732b" }
 dependencies = [
     { name = "workflow-controller-kernel" },
 ]
@@ -2465,7 +2465,7 @@ dependencies = [
 [[package]]
 name = "workflow-controller-plugin-fake-driver"
 version = "0.1.0"
-source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Ffake-driver&tag=v0.1.0#2753c0fd2991c7e54a210fbca08964b229f95b31" }
+source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Ffake-driver&tag=v0.2.0#c37cdb445d73d1b6b997289b7d1fba118f34732b" }
 dependencies = [
     { name = "workflow-controller-kernel" },
 ]
@@ -2473,7 +2473,7 @@ dependencies = [
 [[package]]
 name = "workflow-controller-plugin-file-provenance"
 version = "0.1.0"
-source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Ffile-provenance&tag=v0.1.0#2753c0fd2991c7e54a210fbca08964b229f95b31" }
+source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Ffile-provenance&tag=v0.2.0#c37cdb445d73d1b6b997289b7d1fba118f34732b" }
 dependencies = [
     { name = "workflow-controller-kernel" },
 ]
@@ -2481,7 +2481,7 @@ dependencies = [
 [[package]]
 name = "workflow-controller-plugin-graph"
 version = "0.1.0"
-source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fgraph&tag=v0.1.0#2753c0fd2991c7e54a210fbca08964b229f95b31" }
+source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fgraph&tag=v0.2.0#c37cdb445d73d1b6b997289b7d1fba118f34732b" }
 dependencies = [
     { name = "workflow-controller-kernel" },
 ]
@@ -2489,7 +2489,7 @@ dependencies = [
 [[package]]
 name = "workflow-controller-plugin-staged-pipeline"
 version = "0.1.0"
-source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fstaged-pipeline&tag=v0.1.0#2753c0fd2991c7e54a210fbca08964b229f95b31" }
+source = { git = "https://github.com/guixu-labs/axcor.git?subdirectory=packages%2Fplugins%2Fstaged-pipeline&tag=v0.2.0#c37cdb445d73d1b6b997289b7d1fba118f34732b" }
 dependencies = [
     { name = "workflow-controller-kernel" },
 ]

@@ -59,13 +59,13 @@ dev = [
 ]
 
 [tool.uv.sources]
-workflow-controller-kernel = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.1.0", subdirectory = "packages/kernel" }
-workflow-controller-plugin-agent-traceback = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.1.0", subdirectory = "packages/plugins/agent-traceback" }
-workflow-controller-plugin-breather = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.1.0", subdirectory = "packages/plugins/breather" }
-workflow-controller-plugin-fake-driver = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.1.0", subdirectory = "packages/plugins/fake-driver" }
-workflow-controller-plugin-file-provenance = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.1.0", subdirectory = "packages/plugins/file-provenance" }
-workflow-controller-plugin-graph = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.1.0", subdirectory = "packages/plugins/graph" }
-workflow-controller-plugin-staged-pipeline = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.1.0", subdirectory = "packages/plugins/staged-pipeline" }
+workflow-controller-kernel = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.0", subdirectory = "packages/kernel" }
+workflow-controller-plugin-agent-traceback = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.0", subdirectory = "packages/plugins/agent-traceback" }
+workflow-controller-plugin-breather = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.0", subdirectory = "packages/plugins/breather" }
+workflow-controller-plugin-fake-driver = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.0", subdirectory = "packages/plugins/fake-driver" }
+workflow-controller-plugin-file-provenance = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.0", subdirectory = "packages/plugins/file-provenance" }
+workflow-controller-plugin-graph = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.0", subdirectory = "packages/plugins/graph" }
+workflow-controller-plugin-staged-pipeline = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.0", subdirectory = "packages/plugins/staged-pipeline" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
