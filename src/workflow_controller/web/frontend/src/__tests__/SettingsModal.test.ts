@@ -19,6 +19,7 @@ import { nextTick, ref } from 'vue'
 const mockVisible = ref(true)
 const mockInitialSection = ref('模型供应商')
 const mockToast = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }
+const mockConfirmDelete = vi.fn().mockResolvedValue(true)
 const mockPlugins = ref<any[]>([])
 let postedKeys: unknown | undefined
 let testedCandidate: any
@@ -27,7 +28,7 @@ let putConfigBody: any
 let saveShouldFail = false
 
 vi.mock('../composables/useToast', () => ({ useToast: () => mockToast }))
-vi.mock('../composables/useConfirm', () => ({ useConfirm: () => ({ confirmDelete: vi.fn().mockResolvedValue(true) }) }))
+vi.mock('../composables/useConfirm', () => ({ useConfirm: () => ({ confirmDelete: mockConfirmDelete }) }))
 vi.mock('../composables/useAuth', () => ({ useAuth: () => ({ checkAuth: vi.fn().mockResolvedValue(undefined) }) }))
 vi.mock('../composables/useSettingsModal', () => ({
   useSettingsModal: () => ({ visible: mockVisible, initialSection: mockInitialSection }),
@@ -39,6 +40,7 @@ vi.mock('../composables/usePlugins', () => ({
 const existingProvider = {
   key: 'sk-existing',
   model: 'existing-model',
+  custom_name: 'existing-model',
   base_url: '',
   runtime: 'claude_sdk',
   provider_index: 1,
@@ -143,8 +145,9 @@ describe('SettingsModal provider interactions', () => {
     activeWrapper = mounted.wrapper
     const { setupState } = mounted
 
-    expect(setupState.pendingKey).toEqual({ key: '', model: '', base_url: '' })
+    expect(setupState.pendingKey).toEqual({ key: '', model: '', base_url: '', custom_name: '' })
     expect(document.body.querySelector('input[placeholder="模型（可选，默认 default-model）"]')).toBeTruthy()
+    expect(document.body.querySelector('input[placeholder="自定义名（可选；模型名已被其他自定义名占用时必填）"]')).toBeTruthy()
     expect(document.body.querySelector('input[placeholder="Base URL（可选，默认 https://default.test）"]')).toBeTruthy()
     const addButton = findButton('添加并保存')
     expect(addButton?.disabled).toBe(true)
@@ -170,10 +173,10 @@ describe('SettingsModal provider interactions', () => {
     await flushPromises()
 
     expect(postedKeys).toEqual([
-      { key: 'sk-existing', model: 'existing-model', runtime: 'claude_sdk' },
+      { key: 'sk-existing', model: 'existing-model', custom_name: 'existing-model', runtime: 'claude_sdk' },
       { key: 'sk-new', model: 'new-model', base_url: 'https://new.test', runtime: 'claude_cli' },
     ])
-    expect(setupState.pendingKey).toEqual({ key: '', model: '', base_url: '' })
+    expect(setupState.pendingKey).toEqual({ key: '', model: '', base_url: '', custom_name: '' })
     expect(setupState.pendingRuntime).toBeNull()
     expect(setupState.pendingKeyTestOk).toBe(false)
   })
@@ -195,6 +198,55 @@ describe('SettingsModal provider interactions', () => {
     expect(mockToast.warning).toHaveBeenCalledWith('该 Provider 配置已存在，未重复添加')
     expect(setupState.pendingKey.key).toBe('')
     expect(setupState.pendingKeyTestOk).toBe(false)
+  })
+
+  it('rejects a duplicate custom name before posting', async () => {
+    const mounted = await mountSettings()
+    activeWrapper = mounted.wrapper
+    const { setupState } = mounted
+
+    setupState.pendingKey = {
+      key: 'sk-new', model: 'new-model', base_url: 'https://new.test',
+      custom_name: 'existing-model',
+    }
+    setupState.pendingRuntime = 'claude_cli'
+    await nextTick()
+    setupState.pendingKeyTestOk = true
+    await nextTick()
+    findButton('添加并保存')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
+
+    expect(postedKeys).toBeUndefined()
+    expect(mockToast.error).toHaveBeenCalledWith('自定义名重复：existing-model')
+    expect(setupState.pendingKey.key).toBe('sk-new')
+  })
+
+  it('requires a custom name when the model name is already claimed, then sends it', async () => {
+    const mounted = await mountSettings()
+    activeWrapper = mounted.wrapper
+    const { setupState } = mounted
+
+    setupState.pendingKey = { key: 'sk-new', model: 'existing-model', base_url: 'https://new.test' }
+    setupState.pendingRuntime = 'claude_cli'
+    await nextTick()
+    setupState.pendingKeyTestOk = true
+    await nextTick()
+    findButton('添加并保存')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
+    expect(postedKeys).toBeUndefined()
+    expect(mockToast.error).toHaveBeenCalledWith('模型名已被其他自定义名占用，请输入自定义名')
+
+    setupState.pendingKey.custom_name = 'existing-model-cli'
+    await nextTick()
+    findButton('添加并保存')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
+    expect(postedKeys).toEqual([
+      { key: 'sk-existing', model: 'existing-model', custom_name: 'existing-model', runtime: 'claude_sdk' },
+      {
+        key: 'sk-new', model: 'existing-model', base_url: 'https://new.test',
+        custom_name: 'existing-model-cli', runtime: 'claude_cli',
+      },
+    ])
   })
 
   it('shows the reviewer thinking mode used by the probe', async () => {
@@ -368,6 +420,7 @@ describe('SettingsModal provider interactions', () => {
       key: existingProvider.key,
       model: existingProvider.model,
       base_url: existingProvider.base_url,
+      custom_name: '',
     })
     expect(setupState.pendingRuntime).toBe(existingProvider.runtime)
     expect(setupState.pendingKeyTestOk).toBe(false)
@@ -381,6 +434,7 @@ describe('SettingsModal provider interactions', () => {
     await flushPromises()
 
     expect(deletedProvider).toBe('/api/v1/auth/keys/1')
+    expect(mockConfirmDelete).toHaveBeenCalledWith('existing-model 的密钥')
     expect(postedKeys).toBeUndefined()
   })
 
@@ -439,6 +493,16 @@ describe('SettingsModal provider interactions', () => {
     expect(document.body.textContent).toContain('Claude SDK')
     expect(document.body.textContent).toContain('Reviewer:valid')
     expect(document.body.textContent).not.toContain('Reviewer:valid·')
+  })
+
+  it('renders the model column as custom name with the real model', async () => {
+    const mounted = await mountSettings()
+    activeWrapper = mounted.wrapper
+    const { setupState } = mounted
+
+    const render = setupState.providerColumns.find((column: any) => column.key === 'model').render
+    expect(render({ model: 'glm-4.7', custom_name: 'glm-prod' }).children).toBe('glm-prod（glm-4.7）')
+    expect(render({ model: '', custom_name: '' }).children).toBe('(默认)')
   })
 })
 

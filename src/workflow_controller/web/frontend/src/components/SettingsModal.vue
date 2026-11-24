@@ -389,7 +389,7 @@ async function savePluginConfig(name: string) {
 const dirPicker = ref<InstanceType<typeof DirPicker> | null>(null)
 const browseTarget = ref('')
 
-type ProviderDraft = { key: string, model: string, base_url: string, runtime: string, model_catalog_path?: string, provider_index?: number | null }
+type ProviderDraft = { key: string, model: string, base_url: string, runtime: string, custom_name?: string, model_catalog_path?: string, provider_index?: number | null }
 type PendingProviderDraft = Omit<ProviderDraft, 'runtime'> & { runtime?: string }
 
 // Auth state
@@ -401,7 +401,7 @@ const authSaving = ref(false)
 const authDefaultsSaving = ref(false)
 const providerTestingIndex = ref<number | null>(null)
 
-const pendingKey = ref<PendingProviderDraft>({ key: '', model: '', base_url: '' })
+const pendingKey = ref<PendingProviderDraft>({ key: '', model: '', base_url: '', custom_name: '' })
 // Provider 绑定单一 Worker runtime；真实 driver smoke test 按该值执行。
 const pendingRuntime = ref<string | null>(null)
 const pendingKeyTested = ref(false)
@@ -671,6 +671,8 @@ function copyProviderToPending(providerIndex: number) {
     key: provider.key,
     model: provider.model,
     base_url: provider.base_url,
+    // 自定义名不复制：新 Provider 须重新命名以满足全局唯一。
+    custom_name: '',
     ...(provider.model_catalog_path ? { model_catalog_path: provider.model_catalog_path } : {}),
   }
   pendingRuntime.value = provider.runtime || null
@@ -680,10 +682,11 @@ function copyProviderToPending(providerIndex: number) {
 // 写入并保存待添加供应商，失败时回滚本地列表。
 async function addPendingProviderAndSave() {
   if (!pendingKeyTestOk.value) return
+  const pendingModelName = pendingKey.value.model.trim()
   // 探测出的协议包只留在后端状态中，避免与显式配置混淆。
   const entry: ProviderDraft = {
     key: pendingKey.value.key.trim(),
-    model: pendingKey.value.model.trim(),
+    model: pendingModelName,
     base_url: pendingKey.value.base_url.trim(),
     runtime: pendingRuntime.value!,
       ...(
@@ -692,7 +695,7 @@ async function addPendingProviderAndSave() {
       ) ? { model_catalog_path: resolvedModelCatalogPath.value.trim() } : {},
   }
   if (pendingProviderExists(entry)) {
-    pendingKey.value = { key: '', model: '', base_url: '' }
+    pendingKey.value = { key: '', model: '', base_url: '', custom_name: '' }
     pendingRuntime.value = null
     pendingKeyTested.value = false
     pendingKeyTestOk.value = false
@@ -701,12 +704,26 @@ async function addPendingProviderAndSave() {
     toast.warning('该 Provider 配置已存在，未重复添加')
     return
   }
+  // 配置重复检查在前：完全相同的配置直接提示已存在，不落入命名冲突分支。
+  const customName = pendingKey.value.custom_name?.trim() || ''
+  const occupiedNames = new Set(
+    authKeys.value.map(provider => (provider.custom_name || '').trim()).filter(Boolean),
+  )
+  if (customName && occupiedNames.has(customName)) {
+    toast.error(`自定义名重复：${customName}`)
+    return
+  }
+  if (!customName && pendingModelName && occupiedNames.has(pendingModelName)) {
+    toast.error('模型名已被其他自定义名占用，请输入自定义名')
+    return
+  }
+  entry.custom_name = customName
   const previousKeys = authKeys.value.map(entry => ({ ...entry }))
   authSaving.value = true
   try {
     authKeys.value.push(entry)
     await syncKeys(false)
-    pendingKey.value = { key: '', model: '', base_url: '' }
+    pendingKey.value = { key: '', model: '', base_url: '', custom_name: '' }
     pendingRuntime.value = null
     pendingKeyTested.value = false
     pendingKeyTestOk.value = false
@@ -722,7 +739,7 @@ async function deleteProvider(providerIndex: number) {
   const index = authKeys.value.findIndex(provider => provider.provider_index === providerIndex)
   if (index < 0) return
   const p = authKeys.value[index]
-  if (!await confirmDelete(`${p.model || '默认模型'} 的密钥`)) return
+  if (!await confirmDelete(`${p.custom_name || p.model || '默认模型'} 的密钥`)) return
   try {
     const response = await fetch(`/api/v1/auth/keys/${providerIndex}`, { method: 'DELETE' })
     if (!response.ok) {
@@ -741,6 +758,7 @@ async function loadAuth() {
     const r = await fetch('/api/v1/auth/keys'); const d = await r.json()
     authKeys.value = (d.keys || []).map((k: any) => ({
       key: k.key || '', model: k.model || '', base_url: k.base_url || '', runtime: k.runtime || '',
+      custom_name: k.custom_name || '',
       ...(k.model_catalog_path ? { model_catalog_path: k.model_catalog_path } : {}),
       provider_index: k.provider_index ?? null,
       provider_kind: k.provider_kind || '',
@@ -784,6 +802,7 @@ async function syncKeys(silent: boolean = false) {
       if (e.model.trim()) entry.model = e.model.trim()
       if (e.base_url.trim()) entry.base_url = e.base_url.trim()
       if (e.runtime.trim()) entry.runtime = e.runtime.trim()
+      if (e.custom_name?.trim()) entry.custom_name = e.custom_name.trim()
       if (e.runtime.trim() === 'codex_cli' && e.model_catalog_path?.trim()) {
         entry.model_catalog_path = e.model_catalog_path.trim()
       }
@@ -871,7 +890,9 @@ const providerColumns: DataTableColumns<any> = [
     width: 180,
     ellipsis: { tooltip: true },
     render(row) {
-      return h('span', { style: 'color:var(--workflow-controller-text-muted, #6f6f6f);font-size:12px' }, row.model || '(默认)')
+      const custom = String(row.custom_name || '').trim()
+      const model = row.model || '(默认)'
+      return h('span', { style: 'color:var(--workflow-controller-text-muted, #6f6f6f);font-size:12px' }, custom ? `${custom}（${model}）` : model)
     },
   },
   {
@@ -1176,6 +1197,7 @@ function onDirSelected(path: string) {
                 />
                 <n-input v-model:value="pendingKey.key" placeholder="API 密钥（必填）" />
                 <n-input v-model:value="pendingKey.model" :placeholder="authDefaultModel ? `模型（可选，默认 ${authDefaultModel}）` : '模型（可选，使用默认）'" />
+                <n-input v-model:value="pendingKey.custom_name" placeholder="自定义名（可选；模型名已被其他自定义名占用时必填）" />
                 <n-input v-model:value="pendingKey.base_url" :placeholder="authDefaultUrl ? `Base URL（可选，默认 ${authDefaultUrl}）` : 'Base URL（可选，使用默认）'" />
                 <n-alert
                   v-if="pendingRuntime === 'codex_cli' && modelCatalogStatus !== 'hidden'"

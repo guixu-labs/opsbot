@@ -16,8 +16,8 @@
 // 共享会话配置表单主体。被 NewSessionModal（新建会话）与 ReplayConfigModal（重放检查点）
 // 共用，表单状态经 defineModel 双向绑定回父组件，提交语义（端点 / 提示词默认值 /
 // 初始化来源）由父组件决定。
-import { computed, watch } from 'vue'
-import { NInput, NInputNumber, NSelect, NFormItem, NFlex, NCollapse, NCollapseItem, NSwitch } from 'naive-ui'
+import { computed, h, watch } from 'vue'
+import { NInput, NInputNumber, NSelect, NFormItem, NFlex, NCollapse, NCollapseItem, NSwitch, NTooltip } from 'naive-ui'
 import { useSSE } from '../composables/useSSE'
 import { useAuth } from '../composables/useAuth'
 
@@ -60,15 +60,18 @@ const evaluatorDescriptions: Record<string, string> = {
 }
 const evaluatorTypes = Object.keys(evaluatorDescriptions)
 
+// 代理框架展示名：顶部下拉与 Reviewer 模型选项共用，同一 runtime 一词一译。
+const runtimeLabels: Record<string, string> = {
+  claude_sdk: 'Claude SDK',
+  claude_cli: 'Claude CLI',
+  opencode: 'OpenCode',
+  codex_cli: 'Codex CLI',
+}
+
 // 代理框架下拉选项：禁用父组件标记的 runtime（重放表单禁用 claude_sdk）。
 const runtimeOptions = computed(() => {
   const disabled = new Set(props.disabledRuntimes || [])
-  return [
-    { label: 'Claude SDK', value: 'claude_sdk' },
-    { label: 'Claude CLI', value: 'claude_cli' },
-    { label: 'OpenCode', value: 'opencode' },
-    { label: 'Codex CLI', value: 'codex_cli' },
-  ].map(o => ({ ...o, disabled: disabled.has(o.value) }))
+  return Object.entries(runtimeLabels).map(([value, label]) => ({ label, value, disabled: disabled.has(value) }))
 })
 
 // ── Model selection ──────────────────────────────────────────
@@ -78,13 +81,18 @@ function quotaUnavailable(p: any) {
   return p.status !== 'unused' && p.status !== 'active'
 }
 
+// Provider 显示名优先取自定义名，旧后端/异常数据回落模型名。
+function providerDisplayName(p: any) {
+  return (p.custom_name || '').trim() || p.model || '(无模型)'
+}
+
 const workerModelOptions = computed(() =>
   allProviders.value.filter((p: any) => {
     const runtimeMismatch = !!form.value.runtime && p.runtime !== form.value.runtime
     const validation = p.worker_validation || {}
     return !quotaUnavailable(p) && !runtimeMismatch && validation.status === 'valid'
   }).map((p: any) => ({
-    label: p.model || '(无模型)',
+    label: providerDisplayName(p),
     value: String(p.index),
     disabled: false,
   })),
@@ -95,11 +103,23 @@ const reviewerModelOptions = computed(() =>
     const validation = p.reviewer_validation || {}
     return !quotaUnavailable(p) && validation.status === 'valid'
   }).map((p: any) => ({
-    label: p.model || '(无模型)',
+    // Reviewer 池跨 runtime 并列，自定义名前带框架名区分归属。
+    label: `${runtimeLabels[p.runtime] ?? p.runtime}：${providerDisplayName(p)}`,
     value: String(p.index),
     disabled: false,
   })),
 )
+
+// 模型选项悬浮显示 Provider base_url（为空则不提供悬浮）。
+function renderModelOptionLabel(option: any) {
+  const provider = allProviders.value.find((p: any) => String(p.index) === String(option.value))
+  const url = (provider?.base_url || '').trim()
+  if (!url) return option.label
+  return h(NTooltip, { trigger: 'hover' }, {
+    trigger: () => h('span', {}, option.label),
+    default: () => url,
+  })
+}
 
 const reviewerThinkingModes = computed(() => {
   const provider = allProviders.value.find(
@@ -224,6 +244,7 @@ defineExpose({
         <n-select
           v-model:value="form.sessionModel"
           :options="workerModelOptions"
+          :render-label="renderModelOptionLabel"
         />
       </n-form-item>
     </n-flex>
@@ -249,7 +270,7 @@ defineExpose({
               <n-switch v-model:value="form.reviewerEnabled" />
             </n-form-item>
             <n-form-item label="Reviewer 模型" :show-feedback="false" style="flex:1;min-width:0">
-              <n-select v-model:value="form.reviewerModel" :options="reviewerModelOptions" :disabled="!form.reviewerEnabled" />
+              <n-select v-model:value="form.reviewerModel" :options="reviewerModelOptions" :render-label="renderModelOptionLabel" :disabled="!form.reviewerEnabled" />
             </n-form-item>
           </n-flex>
           <n-flex :size="12" align="center">
