@@ -57,8 +57,21 @@ jobs:
           npm ci
           npm run build
 
+      - name: 写入 axcor 发行包依赖
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: uv run --no-project python scripts/prepare_release_dependencies.py
+
       - name: 构建发行包
-        run: uv build
+        run: uv build --no-sources
+
+      - name: 验证仅用发行 wheel 安装
+        env:
+          UV_TOOL_DIR: ${{ runner.temp }}/release-tools
+          UV_TOOL_BIN_DIR: ${{ runner.temp }}/release-bin
+        run: |
+          uv tool install dist/*.whl
+          "$UV_TOOL_BIN_DIR/workflow-controller" --help
 
       - name: 上传发行包
         if: github.ref_type == 'tag'
