@@ -3,10 +3,8 @@
 ## 规则
 
 - git commit 信息不携带 Co-Authored-By 等 agent 协作信息
-- 本仓与旧仓同步映射区内的文件（`src/workflow_controller/web/`、`src/workflow_controller/context_bay_exporter/`、`tests/{web,context_bay_exporter,cannbot-insight,contract,e2e-shims}/`、`scripts/generate_api_contract_doc.py`、`docs/api-contract.md`）不要直接修改；通用缺陷先回流旧仓 main，再随同步进入本仓
-- 本仓自有内容（pyproject、install.sh、axcor.lock、CI、README、AGENTS.md、`tests/conftest.py`、`tests/__init__.py`）在本仓直接演进
 - 发行包共享 `workflow_controller` PEP 420 命名空间：`workflow_controller/` 与 `workflow_controller/web/` 不携带 `__init__.py`，包内子目录的 `__init__.py` 随包维护
-- 每次同步后更新 `axcor.lock` 和 `pyproject.toml` 中 axcor 内核及插件的 Git 标签，执行 `uv lock`，确认 `uv.lock` 解析出的提交均与 `axcor.lock` 中的 `axcor_sha` 一致
+- 升级 axcor 依赖时，更新 `pyproject.toml` 中内核及插件的 Git 标签和 `axcor.lock` 中的 `axcor_sha`，执行 `uv lock`，确认 `uv.lock` 解析出的提交均与 `axcor_sha` 一致
 - 注释是代码的补充，只有代码不能自表达的信息才需要注释；计划后续移除的过渡代码，其注释必须包含「删除」并说明何时可删
 - 新增类或函数应有单行简洁注释
 - 测试只保留必要用例；命名须易读，不限于单词；删除无用与冗余代码

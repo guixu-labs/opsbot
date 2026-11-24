@@ -7,8 +7,8 @@
 | `src/workflow_controller/web/` | Web 组合根、控制台装配、路由、SPA、Insight 反代、前端源码 |
 | `src/workflow_controller/context_bay_exporter/` | Context Bay（insight 库）导出转换 |
 | `tests/` | web 路由与装配、公开 API 约定（`tests/contract/manifest.yaml` 为唯一清单来源）、导出、e2e shim 测试 |
-| `install.sh` | 面向用户的唯一正式安装入口（过渡期通道） |
-| `axcor.lock` | 构建所用 axcor 提交与同步来源提交的锁定对 |
+| `install.sh` | 面向用户的唯一正式安装入口 |
+| `axcor.lock` | 构建所用 axcor 提交的锁定 |
 
 ## 安装
 
@@ -21,7 +21,6 @@ cd opsbot
 - 自动安装 uv 与 Python（≥3.12）；node + npm 需自备（构建 Web 前端）。
 - 脚本按 `axcor.lock` 锁定的 axcor 提交构建内核与插件 wheel，连同本仓完整包一起经 `uv tool install` 装入隔离环境。
 - 安装后自动验证 `workflow-controller --help`、Web 健康检查与 Headless fake run。
-- 旧版升级：更换 clone 地址后照旧执行 `./install.sh` 即可；原有 CLI、配置文件、数据目录不变，本地 `plugins/<name>/config.yaml` 的启停与自定义字段会在首次启动时自动继承到用户配置目录。
 - 开发安装：`./install.sh --dev`（本仓 `uv sync` + 前端依赖，`uv run workflow-controller web --dev` 启动 Vite HMR）。
 
 ## 快速开始
@@ -78,10 +77,4 @@ cd src/workflow_controller/web/frontend
 npm install && npm run build
 ```
 
-## 同步纪律
-
-本仓与 axcor 仓的源码内容（web、context_bay_exporter、web 侧测试、contract 清单）由旧仓单向同步工具按映射表维护：
-
-- 同步映射区内的文件不要直接修改；通用缺陷先回流旧仓 main，再随同步进入本仓。
-- 本仓自有内容（pyproject、install.sh、axcor.lock、CI、README、`tests/conftest.py` 与 `tests/__init__.py`）在本仓直接演进。
-- 每次同步后手工推进 `axcor.lock`（`legacy_source_sha` = 本次同步来源旧仓提交，`axcor_sha` = 依赖的 axcor 提交），并保持 `pyproject.toml` 的 git 源 rev 与之一致后重新 `uv lock`。
+升级 axcor 依赖：推进 `axcor.lock` 的 `axcor_sha`，并保持 `pyproject.toml` 的 git 源 rev 与之一致，重新 `uv lock`。

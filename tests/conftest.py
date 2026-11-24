@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""共享 pytest 配置：环境隔离（HOME 重定向、外网封禁、环境变量防泄漏）与公共夹具。
-
-本文件为本仓自有内容，不随旧仓同步覆盖。
-"""
+"""共享 pytest 配置：环境隔离（HOME 重定向、外网封禁、环境变量防泄漏）与公共夹具。"""
 
 from __future__ import annotations
 
