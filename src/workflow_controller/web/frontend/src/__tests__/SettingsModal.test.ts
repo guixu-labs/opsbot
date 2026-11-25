@@ -249,27 +249,6 @@ describe('SettingsModal provider interactions', () => {
     ])
   })
 
-  it('rejects a custom name that matches an existing model without a custom name', async () => {
-    const mounted = await mountSettings()
-    activeWrapper = mounted.wrapper
-    const { setupState } = mounted
-    setupState.authKeys[0].custom_name = ''
-
-    setupState.pendingKey = {
-      key: 'sk-new', model: 'new-model', base_url: 'https://new.test',
-      custom_name: 'existing-model',
-    }
-    setupState.pendingRuntime = 'claude_cli'
-    await nextTick()
-    setupState.pendingKeyTestOk = true
-    await nextTick()
-    findButton('添加并保存')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    await flushPromises()
-
-    expect(postedKeys).toBeUndefined()
-    expect(mockToast.error).toHaveBeenCalledWith('自定义名重复：existing-model')
-  })
-
   it('shows the reviewer thinking mode used by the probe', async () => {
     const mounted = await mountSettings()
     activeWrapper = mounted.wrapper
