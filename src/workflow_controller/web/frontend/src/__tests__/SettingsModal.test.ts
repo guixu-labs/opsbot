@@ -146,6 +146,19 @@ describe('SettingsModal provider interactions', () => {
     const { setupState } = mounted
 
     expect(setupState.pendingKey).toEqual({ key: '', model: '', base_url: '', custom_name: '' })
+    const keyInput = document.body.querySelector<HTMLInputElement>('input[placeholder="API 密钥（必填）"]')
+    const eye = keyInput?.closest('.n-input')?.querySelector<HTMLElement>('.n-input__eye')
+    expect(keyInput?.type).toBe('password')
+    expect(eye).toBeTruthy()
+
+    eye?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+    expect(keyInput?.type).toBe('text')
+
+    eye?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+    expect(keyInput?.type).toBe('password')
+
     expect(document.body.querySelector('input[placeholder="模型（可选，默认 default-model）"]')).toBeTruthy()
     expect(document.body.querySelector('input[placeholder="自定义名（可选；模型名已被其他自定义名占用时必填）"]')).toBeTruthy()
     expect(document.body.querySelector('input[placeholder="Base URL（可选，默认 https://default.test）"]')).toBeTruthy()

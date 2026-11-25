@@ -1195,7 +1195,12 @@ function onDirSelected(path: string) {
                     { label: 'Codex CLI', value: 'codex_cli' },
                   ]"
                 />
-                <n-input v-model:value="pendingKey.key" placeholder="API 密钥（必填）" />
+                <n-input
+                  v-model:value="pendingKey.key"
+                  type="password"
+                  show-password-on="click"
+                  placeholder="API 密钥（必填）"
+                />
                 <n-input v-model:value="pendingKey.model" :placeholder="authDefaultModel ? `模型（可选，默认 ${authDefaultModel}）` : '模型（可选，使用默认）'" />
                 <n-input v-model:value="pendingKey.custom_name" placeholder="自定义名（可选；模型名已被其他自定义名占用时必填）" />
                 <n-input v-model:value="pendingKey.base_url" :placeholder="authDefaultUrl ? `Base URL（可选，默认 ${authDefaultUrl}）` : 'Base URL（可选，使用默认）'" />
