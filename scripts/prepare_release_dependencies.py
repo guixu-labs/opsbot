@@ -32,8 +32,11 @@ def release_assets(tag: str, commit: str) -> dict:
         ["git", "ls-remote", AXCOR_GIT, tag_ref, tag_ref + "^{}"], text=True, timeout=60
     )
     commits = {ref: sha for sha, ref in (line.split() for line in refs.splitlines())}
-    if commits.get(tag_ref + "^{}", commits.get(tag_ref)) != commit:
-        raise SystemExit(f"axcor tag {tag} does not resolve to locked commit {commit}")
+    resolved = commits.get(tag_ref + "^{}", commits.get(tag_ref))
+    if resolved is None:
+        raise SystemExit(f"axcor tag {tag} does not exist")
+    if resolved != commit:
+        raise SystemExit(f"axcor tag {tag} resolves to {resolved}, not locked commit {commit}")
 
     release = subprocess.check_output(
         ["gh", "release", "view", tag, "--repo", AXCOR_REPOSITORY, "--json", "assets,isDraft"],
