@@ -18,7 +18,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "workflow-controller"
-version = "1.0.0"
+version = "1.0.1"
 description = "Workflow Controller 完整发行包 — Web 控制台、Insight 反代与 Context Bay 上传/导出（内核与内置插件来自 axcor 仓发行包）"
 readme = "README.md"
 requires-python = ">=3.12"
