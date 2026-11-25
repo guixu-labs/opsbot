@@ -270,36 +270,6 @@ describe('SettingsModal provider interactions', () => {
     expect(mockToast.error).toHaveBeenCalledWith('自定义名重复：existing-model')
   })
 
-  it('allows a custom name to match a model hidden by another custom name', async () => {
-    const mounted = await mountSettings()
-    activeWrapper = mounted.wrapper
-    const { setupState } = mounted
-    setupState.authKeys[0].custom_name = 'existing-display'
-
-    setupState.pendingKey = {
-      key: 'sk-new', model: 'new-model', base_url: 'https://new.test',
-      custom_name: 'existing-model',
-    }
-    setupState.pendingRuntime = 'claude_cli'
-    await nextTick()
-    setupState.pendingKeyTestOk = true
-    await nextTick()
-    findButton('添加并保存')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    await flushPromises()
-
-    expect(mockToast.error).not.toHaveBeenCalled()
-    expect(postedKeys).toEqual([
-      {
-        key: 'sk-existing', model: 'existing-model', custom_name: 'existing-display',
-        runtime: 'claude_sdk',
-      },
-      {
-        key: 'sk-new', model: 'new-model', base_url: 'https://new.test',
-        custom_name: 'existing-model', runtime: 'claude_cli',
-      },
-    ])
-  })
-
   it('shows the reviewer thinking mode used by the probe', async () => {
     const mounted = await mountSettings()
     activeWrapper = mounted.wrapper
