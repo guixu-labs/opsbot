@@ -88,14 +88,17 @@ function providerDisplayName(p: any) {
 
 const workerModelOptions = computed(() =>
   allProviders.value.filter((p: any) => {
-    const runtimeMismatch = !!form.value.runtime && p.runtime !== form.value.runtime
     const validation = p.worker_validation || {}
-    return !quotaUnavailable(p) && !runtimeMismatch && validation.status === 'valid'
-  }).map((p: any) => ({
-    label: providerDisplayName(p),
-    value: String(p.index),
-    disabled: false,
-  })),
+    return !quotaUnavailable(p) && validation.status === 'valid'
+  }).map((p: any) => {
+    const mismatch = !!form.value.runtime && p.runtime !== form.value.runtime
+    const runtime = runtimeLabels[p.runtime] ?? p.runtime
+    return {
+      label: mismatch ? `${providerDisplayName(p)}（绑定 ${runtime}）` : providerDisplayName(p),
+      value: String(p.index),
+      disabled: mismatch,
+    }
+  }),
 )
 
 const reviewerModelOptions = computed(() =>

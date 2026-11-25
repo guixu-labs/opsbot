@@ -363,9 +363,9 @@ test('provider retest surfaces masked worker and reviewer failures', async ({ pa
   await expect(dialog).toBeVisible()
   await expect(dialog.getByText('已配置（1）')).toBeVisible()
 
-  // 分支一：Worker 检测失败 → 「重测失败」弹窗展示脱敏错误（可滚动等宽区）
+  // 分支一：Worker / Reviewer 检测失败 → 弹窗展示脱敏错误（可滚动等宽区）
   await dialog.getByRole('button', { name: '重新测试' }).click()
-  const failedDialog = page.locator('.n-dialog').filter({ hasText: '重测失败' })
+  const failedDialog = page.locator('.n-dialog').filter({ hasText: 'Worker 与 Reviewer 检测失败' })
   await expect(failedDialog).toBeVisible()
   await expect(failedDialog).toContainText('connect timeout to https://api.example.com/v1 (key sk-***abc)')
   await failedDialog.getByRole('button', { name: '关闭' }).click()
@@ -376,6 +376,7 @@ test('provider retest surfaces masked worker and reviewer failures', async ({ pa
   // 须重新走深链入口。
   await mockRetest({
     success: true,
+    worker: { status: 'valid' },
     reviewer: { status: 'invalid', error: 'reviewer probe failed: 401' },
   })
   await page.goto('/settings?section=模型供应商', { waitUntil: 'domcontentloaded' })

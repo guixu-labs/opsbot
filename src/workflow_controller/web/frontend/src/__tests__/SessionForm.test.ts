@@ -68,6 +68,14 @@ async function mountExpandedFormWithProviders(runtime: string) {
       worker_validation: { status: 'invalid', error: 'protocol mismatch' },
       reviewer_validation: { status: 'valid' },
     },
+    {
+      index: 2,
+      model: 'opencode-only',
+      runtime: 'opencode',
+      status: 'active',
+      worker_validation: { status: 'valid' },
+      reviewer_validation: { status: 'invalid', error: 'protocol mismatch' },
+    },
   ]
   return mountExpandedForm(null, runtime)
 }
@@ -118,13 +126,14 @@ describe('SessionForm evaluator hint', () => {
     wrapper.unmount()
   })
 
-  it('lists only providers valid for the selected capability', async () => {
+  it('keeps valid runtime mismatches visible but disabled', async () => {
     const { wrapper } = await mountExpandedFormWithProviders('codex_cli')
     const selects = wrapper.findAllComponents(NSelect)
     const options = selects.map(select => select.props('options') as any[])
 
     expect(options[1]).toEqual([
       { label: 'worker-only', value: '0', disabled: false },
+      { label: 'opencode-only（绑定 OpenCode）', value: '2', disabled: true },
     ])
     expect(options[2]).toEqual([
       { label: 'Codex CLI：reviewer-only', value: '1', disabled: false },

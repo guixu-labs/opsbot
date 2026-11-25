@@ -355,7 +355,7 @@ test('session model dropdown explains disabled providers and starts with the usa
 
   await modelField.locator('.n-select').click()
   const mismatchedOption = page.locator('.n-base-select-option').filter({ hasText: 'e2e-opencode-model' })
-  await expect(mismatchedOption).toContainText('绑定 opencode')
+  await expect(mismatchedOption).toContainText('绑定 OpenCode')
   await expect(mismatchedOption).toHaveClass(/n-base-select-option--disabled/)
 
   await page.locator('.n-base-select-option').filter({ hasText: 'e2e-cli-model' }).click()
