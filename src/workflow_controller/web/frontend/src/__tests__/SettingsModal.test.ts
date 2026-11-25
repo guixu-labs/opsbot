@@ -502,6 +502,7 @@ describe('SettingsModal provider interactions', () => {
 
     const render = setupState.providerColumns.find((column: any) => column.key === 'model').render
     expect(render({ model: 'glm-4.7', custom_name: 'glm-prod' }).children).toBe('glm-prod（glm-4.7）')
+    expect(render({ model: '', custom_name: 'glm-prod' }).children).toBe('glm-prod')
     expect(render({ model: '', custom_name: '' }).children).toBe('(默认)')
   })
 })

@@ -891,8 +891,8 @@ const providerColumns: DataTableColumns<any> = [
     ellipsis: { tooltip: true },
     render(row) {
       const custom = String(row.custom_name || '').trim()
-      const model = row.model || '(默认)'
-      return h('span', { style: 'color:var(--workflow-controller-text-muted, #6f6f6f);font-size:12px' }, custom ? `${custom}（${model}）` : model)
+      const label = custom ? (row.model ? `${custom}（${row.model}）` : custom) : row.model || '(默认)'
+      return h('span', { style: 'color:var(--workflow-controller-text-muted, #6f6f6f);font-size:12px' }, label)
     },
   },
   {
