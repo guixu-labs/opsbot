@@ -706,17 +706,17 @@ async function addPendingProviderAndSave() {
   }
   // 配置重复检查在前：完全相同的配置直接提示已存在，不落入命名冲突分支。
   const customName = pendingKey.value.custom_name?.trim() || ''
-  const occupiedCustomNames = new Set(
-    authKeys.value.map(provider => (provider.custom_name || '').trim()).filter(Boolean),
+  const occupiedDisplayNames = new Set(
+    authKeys.value.map(provider => {
+      const customName = (provider.custom_name || '').trim()
+      return customName || provider.model.trim()
+    }).filter(Boolean),
   )
-  const occupiedModelNames = new Set(
-    authKeys.value.map(provider => provider.model.trim()).filter(Boolean),
-  )
-  if (customName && (occupiedCustomNames.has(customName) || occupiedModelNames.has(customName))) {
+  if (customName && occupiedDisplayNames.has(customName)) {
     toast.error(`自定义名重复：${customName}`)
     return
   }
-  if (!customName && pendingModelName && occupiedCustomNames.has(pendingModelName)) {
+  if (!customName && pendingModelName && occupiedDisplayNames.has(pendingModelName)) {
     toast.error('模型名已被其他自定义名占用，请输入自定义名')
     return
   }
