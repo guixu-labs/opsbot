@@ -42,6 +42,17 @@ _config_path: Path = Path("workflow-controller-config.yaml")
 ORCHESTRATOR_SHUTDOWN_TIMEOUT_S = 120.0
 
 
+def _hook_port_from_environment() -> int | None:
+    """读取 Web CLI 传入的 Hook Server 端口，reload 子进程经环境继承。"""
+    raw_port = os.environ.get("WORKFLOW_CONTROLLER_HOOK_PORT")
+    if not raw_port:
+        return None
+    try:
+        return int(raw_port)
+    except ValueError as exc:
+        raise RuntimeError("WORKFLOW_CONTROLLER_HOOK_PORT must be an integer") from exc
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """FastAPI 生命周期：启动装配内核与 Console，退出关停内核。"""
@@ -84,7 +95,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except Exception:
         log.warning("sse_starlette AppStatus 复位失败（残留 worker 的 SSE 可能被立即取消）")
 
-    orchestrator, api = await boot(cfg, _config_path, settings_dir=settings_dir)
+    orchestrator, api = await boot(
+        cfg,
+        _config_path,
+        settings_dir=settings_dir,
+        hook_port=_hook_port_from_environment(),
+    )
     app.state.api = api
     # 仅作为组合根与 Console 装配器的输入保留；路由处理器不得读取。
     app.state.orchestrator = orchestrator
