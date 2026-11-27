@@ -57,6 +57,6 @@ test('C1 codex + GPT 基线：内置模型 provider 校验通过并一轮完成'
     .toBeVisible({ timeout: 15_000 })
   await expect.poll(() => detail.sessionField('model'), { timeout: 15_000 })
     .toBe('gpt-5.5')
-  await expect.poll(() => detail.sessionField('sdk_session_id'), { timeout: 15_000 })
+  await expect.poll(() => detail.sessionField('native_session_id'), { timeout: 15_000 })
     .toMatch(/^codex-e2e-/)
 })

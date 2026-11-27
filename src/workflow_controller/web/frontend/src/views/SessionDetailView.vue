@@ -61,6 +61,8 @@ const localSession = ref<SessionInfo | null>(null)
 const sessionLoading = ref(true)
 const sseSession = computed(() => sessions.value.find(s => s.id === sessionId.value))
 const session = computed(() => sseSession.value || localSession.value || undefined)
+/** 优先读取新版原生会话 ID，并兼容旧字段数据。 */
+const nativeSessionId = computed(() => session.value?.native_session_id ?? session.value?.sdk_session_id ?? null)
 
 async function fetchLocalSession() {
   const id = sessionId.value
@@ -1442,10 +1444,12 @@ async function doResume() {
 }
 
 async function openInInsight() {
-  if (!session.value?.sdk_session_id) { toast.error('会话没有 sdk_session_id（不是 opencode 会话）'); return }
+  if (!nativeSessionId.value) { toast.error('会话没有 session id（不是 opencode 会话）'); return }
   try {
     toast.info('正在导入到 cannbot-insight...')
-    const res = await fetch(`/api/v1/insight/import?session_id=${session.value.id}`, { method: 'POST' })
+    const currentSessionId = session.value?.id
+    if (!currentSessionId) { return }
+    const res = await fetch(`/api/v1/insight/import?session_id=${currentSessionId}`, { method: 'POST' })
     const data = await res.json()
     if (data.ok) { toast.success('已导入到 cannbot-insight'); window.open(data.insightUrl, '_blank') }
     else { toast.error(`导入失败: ${data.error}`) }
@@ -1603,7 +1607,7 @@ function getInputPlaceholder(): string {
           @click="router.push(`/run/${memberRunId}`)"
         >Run · {{ memberRun?.label || memberRunId }}</n-tag>
         <n-flex :size="6" style="margin-left:auto">
-          <n-button v-if="showPause" quaternary size="medium" title="暂停" :disabled="!session?.sdk_session_id || memberRunPending" @click="doPause">
+          <n-button v-if="showPause" quaternary size="medium" title="暂停" :disabled="!nativeSessionId || memberRunPending" @click="doPause">
             <template #icon>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8f8f8f" stroke-width="1.8">
                 <circle cx="12" cy="12" r="11"/>

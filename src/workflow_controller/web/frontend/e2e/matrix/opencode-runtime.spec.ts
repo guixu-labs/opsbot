@@ -68,9 +68,9 @@ test('O2 opencode 反馈回路：两轮收敛（--session 复用同一原生会�
   // 回合推进靠 <cwd> state.json 计数，与是否传 --session 无关（resume 断开
   // 时每轮起新原生会话、迭代照样推进）。shim 把「本轮是否收到 --session」
   // 与所用原生会话 id 落盘，回读断言：第 2 轮收到 --session（resumed）且
-  // 复用的原生会话 id 与后端捕获的 sdk_session_id 一致，才证明「复用同一
+  // 复用的原生会话 id 与后端捕获的 native_session_id 一致，才证明「复用同一
   // 原生会话」真实跑过。
-  const sdk = (await detail.sessionField('sdk_session_id')) as string | null
+  const sdk = (await detail.sessionField('native_session_id')) as string | null
   expect(sdk).toBeTruthy()
   await expect.poll(async () => {
     const st = await readShimState(project.dir)

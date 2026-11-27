@@ -147,7 +147,7 @@ function makeSession(overrides: Partial<any> = {}) {
     max_iterations: 10,
     elapsed_seconds: 5,
     created_at_iso: '2026-09-11T20:00:00',
-    sdk_session_id: 'ses_test_123',
+    native_session_id: 'ses_test_123',
     project_dir: '/tmp',
     run_id: 'run-1',
     plugin_metadata: {},
@@ -290,11 +290,22 @@ describe('SessionDetailView — 暂停/恢复按钮', () => {
     expect(wrapper.text()).not.toContain('暂停')
   })
 
-  it('没有 sdk_session_id 时暂停按钮 disabled', async () => {
-    const wrapper = await mountSessionDetail(makeSession({ state: 'running', sdk_session_id: null }))
+  it('没有原生会话 ID 时暂停按钮 disabled', async () => {
+    const wrapper = await mountSessionDetail(makeSession({ state: 'running', native_session_id: null }))
     const pauseBtn = wrapper.findAll('button').find(b => b.attributes('title')?.includes('暂停'))
     expect(pauseBtn).toBeTruthy()
     expect(pauseBtn!.attributes('disabled')).toBeDefined()
+  })
+
+  it('旧字段 sdk_session_id 仍可启用暂停按钮', async () => {
+    const wrapper = await mountSessionDetail(makeSession({
+      state: 'running',
+      native_session_id: null,
+      sdk_session_id: 'legacy_session',
+    }))
+    const pauseBtn = wrapper.findAll('button').find(b => b.attributes('title')?.includes('暂停'))
+    expect(pauseBtn).toBeTruthy()
+    expect(pauseBtn!.attributes('disabled')).toBeUndefined()
   })
 })
 

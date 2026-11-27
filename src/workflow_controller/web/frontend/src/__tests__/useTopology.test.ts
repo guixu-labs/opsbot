@@ -46,7 +46,7 @@ function session(state: string, result: string | null = null): SessionInfo {
     result,
     predecessor: null,
     successors: [],
-    sdk_session_id: null,
+    native_session_id: null,
   }
 }
 
