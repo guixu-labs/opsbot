@@ -1050,9 +1050,6 @@ function onDirSelected(path: string) {
             <n-card title="Hook 服务器" size="small" embedded>
               <n-flex vertical :size="12">
                 <n-checkbox v-model:checked="config.hook_server.enabled">启用（保存后重启生效）</n-checkbox>
-                <n-form-item label="端口">
-                  <n-input-number v-model:value="config.hook_server.port" placeholder="18765" style="width:150px" />
-                </n-form-item>
                 <n-form-item label="主机">
                   <n-input v-model:value="config.hook_server.host" placeholder="localhost" style="width:200px" />
                 </n-form-item>

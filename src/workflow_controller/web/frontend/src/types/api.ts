@@ -99,7 +99,6 @@ export interface ConfigInfo {
   agents_path: string
   hook_server: {
     enabled: boolean
-    port: number
     host: string
   }
   reviewer: {

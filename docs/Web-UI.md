@@ -375,7 +375,7 @@ Swagger 的 `POST /api/v1/auth/test-key` 展示供应商试测的 JSON 请求字
 | 项目目录 | **当前项目指针**——决定「项目设置」区改哪个项目；也是 worker cwd + `.workflow-controller/` 工作区位置。改了 + Save → 项目设置区自动 reload 新项目 |
 | Skills 路径 | 自定义 skills 根目录；空 = 走 marketplace 默认。填了则 session 启动时 overlay-sync 进项目 `.claude/skills/`(CC)或 `.opencode/skills/`(opencode)，worker 原生发现；只写这两个目录、不碰 `settings.json` |
 | Agents 路径 | 自定义 agents 根目录；空 = 默认。同上，sync 进 `.claude/agents/`(CC)或 `.opencode/agents/`(opencode) |
-| Hook 服务器 · 启用 / 端口 / 主机 | Claude CLI 通过此通道发送 Stop 和工具提问回调。默认端口为 `18765`。取消勾选「启用」并保存后，下次启动跳过监听 |
+| Hook 服务器 · 启用 / 主机 | Claude CLI 通过此通道发送 Stop 和工具提问回调。取消勾选「启用」并保存后，下次启动跳过监听。端口不属于 YAML 或 Settings，只能通过启动参数 `--hook-port` 指定，默认 `18765` |
 | 审核 · 超时时间 | reviewer 单次判定的超时（秒）|
 | 审核 · 回复模式 | `auto`（reviewer 自动答门禁 + hook 注入提醒）/ `manual`（reviewer 暂停，你在 Session Detail 输入框回复；**staged 场景下每个阶段完成都会停等你审**，见 [阶段门禁设计](./designs/stage-gating.md) §4.4） |
 

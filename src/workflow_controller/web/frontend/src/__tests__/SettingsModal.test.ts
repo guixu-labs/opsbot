@@ -115,7 +115,7 @@ beforeEach(() => {
     }
     if (url === '/api/v1/config') {
       return jsonResponse({
-        hook_server: { enabled: true, port: 18765, host: 'localhost' },
+        hook_server: { enabled: true, host: 'localhost' },
         reviewer: { timeout_seconds: 300, mode: 'auto' },
         watchdog: { snapshot_paths: [] },
       })

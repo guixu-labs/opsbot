@@ -61,7 +61,7 @@ def _service(
     cwd: str = "/tmp/proj",
     cli_wrapper: str = "",
 ) -> ContextBayConsoleService:
-    """构造领域服务桩：session 只有 sdk_session_id 与 config{runtime,cwd}。
+    """构造领域服务桩：session 只有 native_session_id 与 config{runtime,cwd}。
 
     claude 分支因 jsonl 文件不存在会在文件检查处返回——据此断言落在哪个分支。
     """
@@ -70,7 +70,7 @@ def _service(
     # 分支时一定报「file not found」而不是命中真实文件继续走下去。
     monkeypatch.setattr(Path, "home", lambda: Path("/workflow-controller-review-nonexistent-home"))
     session = SimpleNamespace(
-        sdk_session_id="sdk-1",
+        native_session_id="sdk-1",
         config=SimpleNamespace(
             runtime=session_runtime,
             cwd=cwd,

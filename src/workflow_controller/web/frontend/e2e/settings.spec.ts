@@ -20,7 +20,7 @@ const config = {
   skills_path: '/tmp/skills',
   agents_path: '/tmp/agents',
   recent_dirs: ['/tmp/e2e-project'],
-  hook_server: { enabled: false, port: 18765, host: 'localhost' },
+  hook_server: { enabled: false, host: 'localhost' },
   reviewer: { enabled: true, timeout_seconds: 60, mode: 'auto' },
   watchdog: {
     subagent_timeout_seconds: 0,
@@ -488,7 +488,6 @@ test('provider-wide defaults save and update the new-provider placeholders', asy
 })
 
 test('Hook server settings are included in the global config save', async ({ page }) => {
-  // ST-09（③环境自扰：矩阵 hook_server 正在支撑 shim 套件，不能真实改端口）
   let savedConfig: Record<string, unknown> = {}
   await mockSettingsDeps(page)
   await page.route('**/api/v1/config', async route => {
@@ -505,11 +504,10 @@ test('Hook server settings are included in the global config save', async ({ pag
   const dialog = page.getByRole('dialog')
   const hookCard = dialog.locator('.n-card').filter({ hasText: 'Hook 服务器' })
   await hookCard.locator('.n-checkbox').filter({ hasText: '启用' }).click()
-  await hookCard.locator('.n-form-item').filter({ hasText: '端口' }).locator('input').fill('18888')
   await hookCard.locator('.n-form-item').filter({ hasText: '主机' }).locator('input').fill('127.0.0.1')
   await dialog.getByRole('button', { name: '保存全局设置' }).click()
 
   await expect.poll(() => savedConfig).toMatchObject({
-    hook_server: { enabled: true, port: 18888, host: '127.0.0.1' },
+    hook_server: { enabled: true, host: '127.0.0.1' },
   })
 })

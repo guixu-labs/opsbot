@@ -47,10 +47,10 @@ async def main() -> None:
     program.write_text("format: fake@1\n", encoding="utf-8")
     config = AppConfig(
         project_dir=str(workdir),
-        hook_server=HookServerConfig(enabled=True, port=0),
+        hook_server=HookServerConfig(enabled=True),
         reviewer=ReviewerConfig(enabled=False),
     )
-    orchestrator, api = await boot(config, workdir / "workflow-controller-config.yaml")
+    orchestrator, api = await boot(config, workdir / "workflow-controller-config.yaml", hook_port=0)
     run = await api.run.start("fake-demo", program, fmt="fake@1")
     while run.status.value not in ("completed", "failed"):
         await asyncio.sleep(0.1)
