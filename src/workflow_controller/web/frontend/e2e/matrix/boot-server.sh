@@ -60,7 +60,6 @@ brand_name: Workflow Controller
 log_level: INFO
 hook_server:
   enabled: true
-  port: $HOOK_PORT
   host: 127.0.0.1
 EOF
 
@@ -171,6 +170,6 @@ if [ "$E2E_LIVE" != "1" ]; then
 fi
 export UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/workflow-controller-uv-cache}"
 if [ "$E2E_LIVE" = "1" ]; then
-  exec uv run --project "$REPO_ROOT" workflow-controller web --no-open --host 127.0.0.1 --port "$WEB_PORT" --settings-dir "$LIVE_SETTINGS_DIR"
+  exec uv run --project "$REPO_ROOT" workflow-controller web --no-open --host 127.0.0.1 --port "$WEB_PORT" --hook-port "$HOOK_PORT" --settings-dir "$LIVE_SETTINGS_DIR"
 fi
-exec uv run --project "$REPO_ROOT" workflow-controller web --no-open --host 127.0.0.1 --port "$WEB_PORT"
+exec uv run --project "$REPO_ROOT" workflow-controller web --no-open --host 127.0.0.1 --port "$WEB_PORT" --hook-port "$HOOK_PORT"
