@@ -64,6 +64,7 @@ const form = ref<SessionFormState>({
   reviewerEnabled: defaultReviewerEnabled(),
   reviewerThinkingMode: 'disabled',
   reviewerThinkingBudget: 2048,
+  reviewerMaxTokens: 2048,
   systemPrompt: '',
   evaluator: defaultEvaluator(),
   maxIterations: defaultMaxIterations(),
@@ -94,6 +95,7 @@ async function loadProjectConfig() {
     const thinking = resolveReviewerThinking(cfg?.reviewer, globalConfig?.reviewer)
     form.value.reviewerThinkingMode = thinking.mode
     form.value.reviewerThinkingBudget = thinking.budgetTokens
+    form.value.reviewerMaxTokens = thinking.maxTokens
     form.value.runtime = cfg?.runtime || undefined
     form.value.cliWrapper = cfg?.cli_wrapper || ''
     form.value.systemPrompt = cfg?.system_prompt ?? ''
@@ -124,6 +126,7 @@ function open() {
     reviewerEnabled: defaultReviewerEnabled(),
     reviewerThinkingMode: 'disabled',
     reviewerThinkingBudget: 2048,
+    reviewerMaxTokens: 2048,
     systemPrompt: '',
     evaluator: defaultEvaluator(),
     maxIterations: defaultMaxIterations(),
@@ -172,6 +175,7 @@ async function startWorkflowRun(yamlPath: string, vars: Record<string, string>) 
     // 删除：graph 插件适配 reviewer_thinking_mode 后，改为发送完整 mode 并删除布尔兼容。
     params.reviewer_thinking_enabled = f.reviewerThinkingMode === 'enabled'
     if (f.reviewerThinkingBudget != null) params.reviewer_thinking_budget_tokens = f.reviewerThinkingBudget
+    if (f.reviewerMaxTokens != null) params.reviewer_max_tokens = f.reviewerMaxTokens
   }
   if (f.evaluator) params.evaluator = f.evaluator
   if (f.maxIterations) params.max_iterations = f.maxIterations
@@ -220,6 +224,7 @@ async function doStart() {
           reviewer_enabled: f.reviewerEnabled,
           reviewer_thinking_mode: configResolved.value ? f.reviewerThinkingMode : undefined,
           reviewer_thinking_budget_tokens: configResolved.value ? (f.reviewerThinkingBudget ?? undefined) : undefined,
+          reviewer_max_tokens: configResolved.value ? (f.reviewerMaxTokens ?? undefined) : undefined,
           system_prompt: f.systemPrompt || undefined,
           evaluator: f.evaluator || undefined,
           max_iterations: f.maxIterations || undefined,

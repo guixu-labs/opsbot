@@ -31,7 +31,7 @@ describe('replay reviewer settings', () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
       json: async () => url === '/api/v1/config'
         ? { reviewer: { thinking_mode: 'enabled', thinking_budget_tokens: 8192 } }
-        : { reviewer: { enabled: false, thinking_mode: null, thinking_budget_tokens: 4096 } },
+        : { reviewer: { enabled: false, thinking_mode: null, thinking_budget_tokens: 4096, max_tokens: 4096 } },
     })))
     const ReplayConfigModal = (await import('../plugins/agent_traceback/ReplayConfigModal.vue')).default
     const wrapper = mount(ReplayConfigModal, {
@@ -54,6 +54,7 @@ describe('replay reviewer settings', () => {
     expect(form.reviewerEnabled).toBe(false)
     expect(form.reviewerThinking).toBe(true)
     expect(form.reviewerThinkingBudget).toBe(4096)
+    expect(form.reviewerMaxTokens).toBe(4096)
     wrapper.unmount()
   })
 
@@ -64,8 +65,8 @@ describe('replay reviewer settings', () => {
       }
       return {
         json: async () => url === '/api/v1/config'
-          ? { reviewer: { thinking_mode: 'enabled', thinking_budget_tokens: 8192 } }
-          : { reviewer: { enabled: false, thinking_mode: null, thinking_budget_tokens: 4096 } },
+          ? { reviewer: { thinking_mode: 'enabled', thinking_budget_tokens: 8192, max_tokens: 8192 } }
+          : { reviewer: { enabled: false, thinking_mode: null, thinking_budget_tokens: 4096, max_tokens: 4096 } },
       }
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -100,6 +101,7 @@ describe('replay reviewer settings', () => {
         reviewer_enabled: false,
         reviewer_thinking_enabled: true,
         reviewer_thinking_budget_tokens: 4096,
+        reviewer_max_tokens: 4096,
       }),
     }))
     wrapper.unmount()

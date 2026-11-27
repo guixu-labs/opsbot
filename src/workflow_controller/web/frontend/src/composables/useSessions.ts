@@ -23,6 +23,7 @@ export function useSessions() {
     reviewer_enabled?: boolean
     reviewer_thinking_mode?: string
     reviewer_thinking_budget_tokens?: number
+    reviewer_max_tokens?: number
     system_prompt?: string
     evaluator?: string
     max_iterations?: number
@@ -41,6 +42,7 @@ export function useSessions() {
       if (options?.reviewer_enabled !== undefined) body.reviewer_enabled = options.reviewer_enabled
       if (options?.reviewer_thinking_mode !== undefined) body.reviewer_thinking_mode = options.reviewer_thinking_mode
       if (options?.reviewer_thinking_budget_tokens != null) body.reviewer_thinking_budget_tokens = options.reviewer_thinking_budget_tokens
+      if (options?.reviewer_max_tokens != null) body.reviewer_max_tokens = options.reviewer_max_tokens
       if (options?.system_prompt) body.system_prompt = options.system_prompt
       if (options?.evaluator) body.evaluator = options.evaluator
       if (options?.max_iterations) body.max_iterations = options.max_iterations

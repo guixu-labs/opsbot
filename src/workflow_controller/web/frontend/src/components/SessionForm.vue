@@ -32,6 +32,7 @@ export interface SessionFormState {
   // 删除：traceback 重放插件尚未迁移；其改用 thinking_mode 后删除旧布尔状态。
   reviewerThinking?: boolean
   reviewerThinkingBudget: number | null
+  reviewerMaxTokens: number | null
   systemPrompt?: string | null
   evaluator?: string | null
   maxIterations?: number | null
@@ -295,6 +296,9 @@ defineExpose({
             </n-form-item>
             <n-form-item label="思考 token 预算" :show-feedback="false" style="width:180px">
               <n-input-number v-model:value="form.reviewerThinkingBudget" :min="1024" :step="1024" :disabled="!form.reviewerEnabled || !reviewerThinkingBudgetAvailable" style="width:100%" />
+            </n-form-item>
+            <n-form-item label="Reviewer max tokens" :show-feedback="false" style="width:180px">
+              <n-input-number v-model:value="form.reviewerMaxTokens" :min="2048" :step="1024" :disabled="!form.reviewerEnabled" style="width:100%" />
             </n-form-item>
           </n-flex>
           <n-form-item label="系统提示词" :show-feedback="false">

@@ -28,6 +28,7 @@ describe('checkpoint replay overrides', () => {
       reviewer_enabled: false,
       reviewer_thinking_enabled: false,
       reviewer_thinking_budget_tokens: 4096,
+      reviewer_max_tokens: 8192,
     })
 
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/origin/traceback'), expect.objectContaining({
@@ -37,6 +38,7 @@ describe('checkpoint replay overrides', () => {
           reviewer_enabled: false,
           reviewer_thinking_enabled: false,
           reviewer_thinking_budget_tokens: 4096,
+          reviewer_max_tokens: 8192,
         },
       }),
     }))

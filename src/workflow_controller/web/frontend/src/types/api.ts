@@ -110,6 +110,7 @@ export interface ConfigInfo {
     mode: string
     thinking_mode: string
     thinking_budget_tokens: number
+    max_tokens: number
   }
   sessions: Array<{ name: string; role: string }>
   recent_dirs: string[]
@@ -131,6 +132,7 @@ export interface ProjectConfig {
     task_goal: string
     thinking_mode: string | null
     thinking_budget_tokens: number | null
+    max_tokens: number | null
   }
   // 项目级 graph yaml 绝对路径（未配置为空串），Graph tab 预填用
   graph_yaml: string

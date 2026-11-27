@@ -91,10 +91,13 @@ describe('session creation reviewer choice', () => {
   it('sends an explicit false reviewer setting to the Session API', async () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ session_id: 's1' }) }))
     vi.stubGlobal('fetch', fetchMock)
-    await useSessions().start('/proj', 'task', undefined, { reviewer_enabled: false })
+    await useSessions().start('/proj', 'task', undefined, {
+      reviewer_enabled: false,
+      reviewer_max_tokens: 8192,
+    })
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/sessions/start', expect.objectContaining({
       method: 'POST',
-      body: expect.stringContaining('"reviewer_enabled":false'),
+      body: expect.stringMatching(/"reviewer_enabled":false.*"reviewer_max_tokens":8192/),
     }))
   })
 

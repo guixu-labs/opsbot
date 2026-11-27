@@ -136,6 +136,26 @@ async def test_start_session_legacy_thinking_false_maps_to_disabled() -> None:
     assert reviewer.thinking_mode == "disabled"
 
 
+async def test_start_session_passes_reviewer_max_tokens(monkeypatch) -> None:
+    """验证新内核 reviewer max_tokens 覆盖项透传。"""
+    session = AsyncMock()
+    request = SimpleNamespace(
+        app=SimpleNamespace(state=SimpleNamespace(api=SimpleNamespace(session=session))),
+    )
+
+    class NewReviewerOverrides:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    monkeypatch.setattr(sessions_routes, "_REVIEWER_START_SUPPORTS_MAX_TOKENS", True)
+    monkeypatch.setattr(sessions_routes, "ReviewerStartOverrides", NewReviewerOverrides)
+    await sessions_routes.start_session(
+        {"project_dir": "/proj", "reviewer_max_tokens": 8192},
+        request,
+    )
+    assert session.start.await_args.kwargs["reviewer"].max_tokens == 8192
+
+
 _SESSION_ROUTES = (
     (sessions_routes.stop_session, "stop"),
     (sessions_routes.pause_session, "pause"),
