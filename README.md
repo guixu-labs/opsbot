@@ -4,9 +4,9 @@
 
 | 内容 | 说明 |
 |---|---|
-| `src/workflow_controller/web/` | Web 组合根、控制台装配、路由、SPA、Insight 反代、前端源码 |
+| `src/workflow_controller/web/` | Web 组合根、控制台装配（复用 axcor 的内核 HTTP 路由）、Context Bay 领域路由、SPA、Insight 反代、前端源码 |
 | `src/workflow_controller/context_bay_exporter/` | Context Bay（insight 库）导出转换 |
-| `tests/` | web 路由与装配、公开 API 约定（`tests/contract/manifest.yaml` 为唯一清单来源）、导出、e2e shim 测试 |
+| `tests/` | 控制台装配、Insight 反代与 Context Bay 路由、控制台自有端点约定（`tests/contract/manifest.yaml`）、导出、e2e shim 测试 |
 | `install.sh` | 面向用户的唯一正式安装入口 |
 | `axcor.lock` | 构建所用 axcor 提交的锁定 |
 
@@ -28,6 +28,7 @@ cd opsbot
 ```bash
 workflow-controller web                 # Web UI（默认端口 18600，自动打开浏览器）
 workflow-controller run --headless      # Headless JSON lines 输出（CI/脚本）
+workflow-controller serve               # 仅内核 HTTP API（axcor 提供，不带 Web UI 与 Insight；与 web 同端口，不同时运行）
 ```
 
 不依赖外部 agent 运行时的最小 headless 冒烟（fake 驱动）：
@@ -62,7 +63,7 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-公开 HTTP API 与 SSE 事件清单见 [docs/api-contract.md](docs/api-contract.md)。
+公开 HTTP API 的约定分两处：内核面端点（`/api/v1` 下的 Session、Run、Auth、Config、Plugins、Overview、SSE、Watchdog）与 SSE 事件、告警词表住 axcor 仓的 `docs/api-contract.md`，路由实现也住 axcor 的 `api/http`；控制台自有端点见 [docs/api-contract.md](docs/api-contract.md)。控制台应用在内核路由之上叠加 Context Bay 领域路由、Insight 反代与 SPA，约定测试要求两者的 `/api/v1` 路由面只差控制台自有的端点。
 
 ## 开发
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""约定清单加载与文档渲染 —— manifest.yaml 是公开 API 与事件清单的唯一事实来源。"""
+"""约定清单加载与文档渲染 —— manifest.yaml 是控制台自有 HTTP 路由的唯一事实来源。"""
 
 from __future__ import annotations
 
@@ -34,19 +34,18 @@ _CLASS_TITLES = {
 
 @cache
 def load_manifest() -> dict:
-    """读入清单并做结构校验（未知键、路由行形状、重复端点、payload 行形状即报错）。"""
+    """读入清单并做结构校验（未知键、路由行形状、重复端点即报错）。"""
     with MANIFEST_PATH.open(encoding="utf-8") as stream:
         manifest = yaml.safe_load(stream)
 
-    expected_keys = {"routes", "sse_event_names", "fault_event_types", "event_payload_fields"}
-    unknown = set(manifest) - expected_keys
+    unknown = set(manifest) - {"routes"}
     if unknown:
         raise ValueError(f"清单出现未知顶层键：{sorted(unknown)}")
 
-    seen_global: set[tuple[str, str]] = set()
     classes = manifest["routes"]
     if set(classes) != set(ROUTE_CLASSES):
         raise ValueError(f"路由分类必须恰为 {list(ROUTE_CLASSES)}")
+    seen_global: set[tuple[str, str]] = set()
     for class_name in ROUTE_CLASSES:
         seen_in_class: set[tuple[str, str]] = set()
         for row in classes[class_name]:
@@ -62,58 +61,29 @@ def load_manifest() -> dict:
             if not all(isinstance(code, int) for code in codes):
                 raise ValueError(f"{key} 状态码须为整数列表：{codes!r}")
             seen_global.add(key)
-
-    for row_name, field_row in manifest["event_payload_fields"].items():
-        if not isinstance(field_row, dict):
-            raise ValueError(f"payload 字段行须为映射：{row_name} → {field_row!r}")
-        if "fields" not in field_row:
-            raise ValueError(f"payload 字段行缺少 fields：{row_name} → {field_row!r}")
-        if "source" not in field_row:
-            raise ValueError(f"payload 字段行缺少 source：{row_name} → {field_row!r}")
     return manifest
 
 
-def routes_by_class() -> dict[str, dict[tuple[str, str], list[int]]]:
-    """三分类自有端点清单：{(方法, 路径): [登记状态码]}。"""
+def console_routes() -> set[tuple[str, str]]:
+    """三分类并集：控制台自有路由的全集 {(方法, 路径)}。"""
     return {
-        class_name: {
-            (method, path): list(codes)
-            for method, path, codes in load_manifest()["routes"][class_name]
-        }
-        for class_name in ROUTE_CLASSES
+        (method, path)
+        for rows in load_manifest()["routes"].values()
+        for method, path, _codes in rows
     }
-
-
-def self_owned_routes() -> set[tuple[str, str]]:
-    """三分类并集：自有路由面的全集。"""
-    return {key for routes in routes_by_class().values() for key in routes}
-
-
-def sse_event_names() -> list[str]:
-    """SSE 单流推送的事件名清单。"""
-    return list(load_manifest()["sse_event_names"])
-
-
-def fault_event_types() -> list[str]:
-    """watchdog 告警的 fault.* 词表。"""
-    return list(load_manifest()["fault_event_types"])
-
-
-def event_payload_fields(row_name: str) -> list[str]:
-    """按行名取事件 payload 顶层字段清单。"""
-    rows = load_manifest()["event_payload_fields"]
-    if row_name not in rows:
-        raise ValueError(f"payload 字段行未登记：{row_name}")
-    return list(rows[row_name]["fields"])
 
 
 def render_manifest_markdown() -> str:
     """由清单渲染人读 API 文档内容。"""
     lines = [
-        "# 公开 API 与事件约定",
+        "# 控制台自有 HTTP 路由约定",
         "",
         "> 本文档由 `tests/contract/manifest.yaml` 生成；改动清单后运行",
         "> `python scripts/generate_api_contract_doc.py` 再提交，生成校验测试会拦截未同步的漂移。",
+        "",
+        "> 内核面端点（`/api/v1` 下的 Session、Run、Auth、Config、Plugins、Overview、SSE、Watchdog）、",
+        "> SSE 事件名与告警词表的约定住 axcor 仓的 `docs/api-contract.md`；控制台应用复用同一份路由实现，",
+        "> 约定测试要求控制台应用的正式路由面去掉下列自有端点后与内核应用完全一致。",
         "",
     ]
     manifest = load_manifest()
@@ -127,25 +97,4 @@ def render_manifest_markdown() -> str:
             rendered = ", ".join(str(code) for code in codes) if codes else "—"
             lines.append(f"| {method} | `{path}` | {rendered} |")
         lines.append("")
-
-    lines.append(f"## SSE 事件名（{len(manifest['sse_event_names'])} 个）")
-    lines.append("")
-    lines.append("、".join(f"`{name}`" for name in manifest["sse_event_names"]))
-    lines.append("")
-
-    lines.append(f"## 告警事件词表（{len(manifest['fault_event_types'])} 个）")
-    lines.append("")
-    lines.append("、".join(f"`{name}`" for name in manifest["fault_event_types"]))
-    lines.append("")
-
-    lines.append("## 事件行与 payload 字段")
-    lines.append("")
-    lines.append("| payload 行 | 顶层字段 | 来源 |")
-    lines.append("|---|---|---|")
-    for row_name, row in manifest["event_payload_fields"].items():
-        fields = "、".join(f"`{field}`" for field in row["fields"])
-        if note := row.get("note", ""):
-            fields += f"；{note}"
-        lines.append(f"| {row_name} | {fields} | {row['source']} |")
-    lines.append("")
     return "\n".join(lines)

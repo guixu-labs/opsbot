@@ -39,7 +39,6 @@ dependencies = [
     "workflow-controller-plugin-staged-pipeline>=0.1.0",
     "fastapi>=0.115,<0.137",
     "uvicorn[standard]>=0.32",
-    "sse-starlette>=3.3",
 ]
 
 [project.scripts]
@@ -59,13 +58,13 @@ dev = [
 ]
 
 [tool.uv.sources]
-workflow-controller-kernel = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.1", subdirectory = "packages/kernel" }
-workflow-controller-plugin-agent-traceback = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.1", subdirectory = "packages/plugins/agent-traceback" }
-workflow-controller-plugin-breather = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.1", subdirectory = "packages/plugins/breather" }
-workflow-controller-plugin-fake-driver = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.1", subdirectory = "packages/plugins/fake-driver" }
-workflow-controller-plugin-file-provenance = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.1", subdirectory = "packages/plugins/file-provenance" }
-workflow-controller-plugin-graph = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.1", subdirectory = "packages/plugins/graph" }
-workflow-controller-plugin-staged-pipeline = { git = "https://github.com/guixu-labs/axcor.git", tag = "v0.2.1", subdirectory = "packages/plugins/staged-pipeline" }
+workflow-controller-kernel = { git = "https://github.com/guixu-labs/axcor.git", rev = "9889892784dd444a1ca2dc21aeb95f505a36d9ce", subdirectory = "packages/kernel" }
+workflow-controller-plugin-agent-traceback = { git = "https://github.com/guixu-labs/axcor.git", rev = "9889892784dd444a1ca2dc21aeb95f505a36d9ce", subdirectory = "packages/plugins/agent-traceback" }
+workflow-controller-plugin-breather = { git = "https://github.com/guixu-labs/axcor.git", rev = "9889892784dd444a1ca2dc21aeb95f505a36d9ce", subdirectory = "packages/plugins/breather" }
+workflow-controller-plugin-fake-driver = { git = "https://github.com/guixu-labs/axcor.git", rev = "9889892784dd444a1ca2dc21aeb95f505a36d9ce", subdirectory = "packages/plugins/fake-driver" }
+workflow-controller-plugin-file-provenance = { git = "https://github.com/guixu-labs/axcor.git", rev = "9889892784dd444a1ca2dc21aeb95f505a36d9ce", subdirectory = "packages/plugins/file-provenance" }
+workflow-controller-plugin-graph = { git = "https://github.com/guixu-labs/axcor.git", rev = "9889892784dd444a1ca2dc21aeb95f505a36d9ce", subdirectory = "packages/plugins/graph" }
+workflow-controller-plugin-staged-pipeline = { git = "https://github.com/guixu-labs/axcor.git", rev = "9889892784dd444a1ca2dc21aeb95f505a36d9ce", subdirectory = "packages/plugins/staged-pipeline" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -134,14 +133,6 @@ forbidden_modules = [
     "workflow_controller.support",
     "workflow_controller.watchdog",
 ]
-allow_indirect_imports = true
-
-[[tool.importlinter.contracts]]
-id = "routes-no-composition-root"
-name = "Route modules must not import the web composition root or console assembler"
-type = "forbidden"
-source_modules = ["workflow_controller.web.routes"]
-forbidden_modules = ["workflow_controller.web.app", "workflow_controller.web.console"]
 allow_indirect_imports = true
 
 [tool.coverage.run]

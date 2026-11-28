@@ -16,21 +16,16 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi import APIRouter, FastAPI
-from fastapi.routing import APIRoute
 
 from workflow_controller.web.console import (
-    OPENAPI_TAGS,
     assemble_console,
     include_router_before_catchall,
     register_context_bay_router,
-    register_domain_routes,
-    register_plugin_routers,
 )
 
 if TYPE_CHECKING:
@@ -52,6 +47,29 @@ def _plugin_router(path: str) -> APIRouter:
     return router
 
 
+async def _insight_port_without_probing() -> int:
+    return 21025
+
+
+def _console_app_with_startup_plugin(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> FastAPI:
+    """按生产装配路径组装控制台：伪 dist 让 SPA catch-all 生效，启动期装载一个插件。"""
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<html></html>", encoding="utf-8")
+    monkeypatch.setattr("workflow_controller.web.spa._frontend_dist", lambda: dist)
+    # detect_insight_port 以 console 模块内的引用被调用，补丁须打在该模块上
+    monkeypatch.setattr(
+        "workflow_controller.web.console.detect_insight_port", _insight_port_without_probing
+    )
+
+    app = FastAPI()
+    # CANN 领域路由装配需要 CoreAPI
+    app.state.api = MagicMock()
+    app.state.api.plugin.list_plugins.return_value = [{"name": "demo"}]
+    app.state.api.plugin.get_web_router.return_value = _plugin_router("/plugin-at-boot")
+    return app
+
+
 def test_runtime_toggle_router_registered_before_spa_catchall() -> None:
     app = FastAPI()
 
@@ -65,41 +83,37 @@ def test_runtime_toggle_router_registered_before_spa_catchall() -> None:
     assert paths.index("/plugin-runtime") < paths.index("/{full_path:path}")
 
 
-def test_runtime_plugin_router_dedupes_by_name() -> None:
-    """运行期注册回调：前插于 catch-all 之前，同名插件不重复注册。"""
-    app = FastAPI()
-    register_plugin_routers(app, SimpleNamespace(plugins=[]))
-    register = app.state.register_runtime_plugin_router
-
-    register("demo", _plugin_router("/demo-a"))
-    register("demo", _plugin_router("/demo-b"))  # 同名：忽略
+async def test_assemble_console_keeps_plugin_router_before_spa_catchall(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    app = _console_app_with_startup_plugin(monkeypatch, tmp_path)
+    await assemble_console(app)  # type: ignore[arg-type]
 
     paths = _route_paths(app)
-    assert "/demo-a" in paths and "/demo-b" not in paths
+    assert paths.index("/plugin-at-boot") < paths.index("/{full_path:path}")
     assert getattr(app.state, "plugin_routers") == {"demo"}
+    assert app.state.insight_port == 21025
+    assert "/insight/{path:path}" in paths
+    assert "/api/v1/insight/status" in paths  # CANN 领域暂存路由随装配挂载
 
 
-def test_domain_route_tags_match_openapi_tags() -> None:
-    """领域路由挂载的 tag 必须与 OPENAPI_TAGS 完全一致（单一来源回归）。
+async def test_runtime_plugin_router_precedes_catchall_and_dedupes_by_name(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """运行期注册回调：前插于 catch-all 之前，同名插件不重复注册。"""
+    app = _console_app_with_startup_plugin(monkeypatch, tmp_path)
+    await assemble_console(app)  # type: ignore[arg-type]
+    register = app.state.register_runtime_plugin_router
 
-    此前 tag 在 OPENAPI_TAGS 与挂载表各自硬编码一份，新增领域漏改会让
-    端点静默丢失中文描述并被排到 /docs 末尾；此断言钉死两边集合一致。
-    """
-    app = FastAPI()
-    app.state.api = MagicMock()
-    register_domain_routes(app)
-    register_context_bay_router(app)
+    register("late", _plugin_router("/late-a"))
+    register("late", _plugin_router("/late-b"))  # 同名：忽略
 
-    mounted: set[str] = set()
-    for route in app.router.routes:
-        if not (isinstance(route, APIRoute) and route.path.startswith("/api/v1")):
-            continue
-        for tag in route.tags:
-            mounted.add(tag)
-    documented = {entry["name"] for entry in OPENAPI_TAGS}
-    assert mounted == documented, (
-        f"领域挂载 tag={sorted(mounted)} 与 OPENAPI_TAGS={sorted(documented)} 不一致"
-    )
+    paths = _route_paths(app)
+    assert paths.index("/late-a") < paths.index("/{full_path:path}")
+    assert "/late-b" not in paths
+    assert getattr(app.state, "plugin_routers") == {"demo", "late"}
 
 
 def test_register_context_bay_router_failure_fails_boot(
@@ -126,35 +140,3 @@ def test_register_context_bay_router_exposes_config_section_provider() -> None:
     register_context_bay_router(app)
     provider = app.state.config_section_providers["context_bay"]
     assert provider.read_config_section() == {"repo_url": "", "snapshot_paths": []}
-
-
-async def test_assemble_console_keeps_plugin_router_before_spa_catchall(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    # dist 构建产物不入库，缺失时 mount_spa 会跳过 catch-all 注册；
-    # 指向伪 dist 才能让真实装配路径完整生效。
-    dist = tmp_path / "dist"
-    dist.mkdir()
-    (dist / "index.html").write_text("<html></html>", encoding="utf-8")
-    monkeypatch.setattr("workflow_controller.web.spa._frontend_dist", lambda: dist)
-
-    async def fake_detect() -> int:
-        return 21025
-
-    monkeypatch.setattr("workflow_controller.web.console.detect_insight_port", fake_detect)
-
-    plugin = SimpleNamespace(
-        config=SimpleNamespace(name="demo"),
-        get_web_router=lambda: _plugin_router("/plugin-at-boot"),
-    )
-    app = FastAPI()
-    # CANN 领域路由装配需要 CoreAPI
-    app.state.api = MagicMock()
-    await assemble_console(app, SimpleNamespace(plugins=[plugin]))  # type: ignore[arg-type]
-
-    paths = _route_paths(app)
-    assert paths.index("/plugin-at-boot") < paths.index("/{full_path:path}")
-    assert app.state.insight_port == 21025
-    assert "/insight/{path:path}" in paths
-    assert "/api/v1/insight/status" in paths  # CANN 领域暂存路由随装配挂载
