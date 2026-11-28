@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from dataclasses import fields
 from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -33,11 +32,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 router = APIRouter()
-
-# 删除：axcor 发布包含 reviewer.max_tokens 的 tag 并升级依赖后删除兼容开关。
-_REVIEWER_START_SUPPORTS_MAX_TOKENS = "max_tokens" in {
-    field.name for field in fields(ReviewerStartOverrides)
-}
 
 
 def _session_op(route: Callable[..., Any]) -> Callable[..., Any]:
@@ -155,8 +149,7 @@ async def start_session(body: dict[str, Any], request: Request) -> dict[str, Any
         "thinking_mode": reviewer_thinking_mode,
         "thinking_budget_tokens": reviewer_thinking_budget_tokens,
     }
-    if _REVIEWER_START_SUPPORTS_MAX_TOKENS:
-        reviewer_kwargs["max_tokens"] = body.get("reviewer_max_tokens")
+    reviewer_kwargs["max_tokens"] = body.get("reviewer_max_tokens")
     try:
         return await api.session.start(
             project_dir,

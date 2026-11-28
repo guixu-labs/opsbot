@@ -280,7 +280,7 @@ defineExpose({
           <n-flex :size="12" align="center">
             <n-form-item
               v-if="usesThinkingModes"
-              label="Reviewer thinking mode"
+              label="Reviewer 思考模式"
               :show-feedback="false"
               style="flex:1;min-width:180px"
             >
@@ -297,7 +297,7 @@ defineExpose({
             <n-form-item label="思考 token 预算" :show-feedback="false" style="width:180px">
               <n-input-number v-model:value="form.reviewerThinkingBudget" :min="1024" :step="1024" :disabled="!form.reviewerEnabled || !reviewerThinkingBudgetAvailable" style="width:100%" />
             </n-form-item>
-            <n-form-item label="Reviewer max tokens" :show-feedback="false" style="width:180px">
+            <n-form-item label="输出 tokens 上限（含思考）" :show-feedback="false" style="width:180px">
               <n-input-number v-model:value="form.reviewerMaxTokens" :min="2048" :step="1024" :disabled="!form.reviewerEnabled" style="width:100%" />
             </n-form-item>
           </n-flex>
