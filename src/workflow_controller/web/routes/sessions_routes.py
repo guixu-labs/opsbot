@@ -218,6 +218,25 @@ async def set_session_reviewer_mode(
     return {"ok": True, "mode": mode}
 
 
+@router.put("/sessions/{session_id}/reviewer-task-goal")
+async def set_session_reviewer_task_goal(
+    session_id: str,
+    body: dict[str, Any],
+    request: Request,
+) -> dict[str, Any]:
+    """更新会话当前生效的 reviewer 任务目标，回显保存后的值。"""
+    task_goal = body.get("task_goal")
+    if not isinstance(task_goal, str):
+        raise HTTPException(status_code=400, detail="task_goal must be a string")
+    try:
+        stored = await get_core_api(request).session.set_session_reviewer_task_goal(
+            session_id, task_goal
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True, "task_goal": stored}
+
+
 @router.post("/sessions/{session_id}/restart")
 @_session_op
 async def restart_session(session_id: str, request: Request) -> dict[str, Any]:

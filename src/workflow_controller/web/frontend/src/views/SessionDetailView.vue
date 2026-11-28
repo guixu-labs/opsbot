@@ -251,8 +251,29 @@ const reviewerEnabled = ref(true)
 const sessionReviewerEnabled = computed(
   () => session.value?.reviewer_enabled ?? reviewerEnabled.value,
 )
+// Reviewer 目标编辑：生效值以会话快照为准，本端刚保存的值只在「保存后 → 快照追平前」优先
 const reviewerTaskGoal = computed(() => session.value?.reviewer_task_goal?.trim() || '')
-const showReviewerTaskGoal = ref(false)
+const reviewerGoalSaved = ref<string | null>(null)
+let reviewerGoalSnapshotAtSave = ''
+const appliedReviewerGoal = computed(() => reviewerGoalSaved.value ?? reviewerTaskGoal.value)
+const reviewerGoalDraft = ref('')
+const reviewerGoalDirty = ref(false)
+const reviewerGoalSaving = ref(false)
+const reviewerGoalUpdatable = computed(() => {
+  const draft = reviewerGoalDraft.value.trim()
+  return draft !== '' && draft !== appliedReviewerGoal.value && !reviewerGoalSaving.value
+})
+watch(sessionId, () => { reviewerGoalSaved.value = null; reviewerGoalDirty.value = false })
+// 快照离开保存时的值（追平本端保存值，或被其他端改成新值）后，本端优先结束
+watch(reviewerTaskGoal, (goal) => {
+  if (reviewerGoalSaved.value !== null && goal !== reviewerGoalSnapshotAtSave) {
+    reviewerGoalSaved.value = null
+  }
+})
+// 生效值变化只同步未编辑的草稿，不覆盖用户正在输入的内容
+watch(appliedReviewerGoal, (goal) => {
+  if (!reviewerGoalDirty.value) reviewerGoalDraft.value = goal
+})
 let breatherPollTimer: ReturnType<typeof setInterval> | null = null
 
 const handoffError = ref<string | null>(null)
@@ -1235,11 +1256,15 @@ function onOpenFork(forkSessionId: string) { openSession(forkSessionId) }
 const selectedAgentId = ref<string | null>(null)
 const showAgentDetail = ref(false)
 const selectedAgent = computed(() => topology.value?.nodes.find(n => n.id === selectedAgentId.value) || null)
-watch(selectedAgentId, () => {
-  showReviewerTaskGoal.value = false
+// Reviewer 详情打开时以生效值起稿；关闭即丢弃未保存草稿
+watch([showAgentDetail, selectedAgentId], ([show, agentId]) => {
+  if (show && agentId === 'reviewer') {
+    reviewerGoalDraft.value = appliedReviewerGoal.value
+    reviewerGoalDirty.value = false
+  }
 })
 watch(showAgentDetail, (show) => {
-  if (!show) showReviewerTaskGoal.value = false
+  if (!show) reviewerGoalDirty.value = false
 })
 
 function onSelectAgent(agentId: string) {
@@ -1392,6 +1417,23 @@ async function toggleReply() {
     replyMode.value = next
     toast.info(next === 'manual' ? '手动回复模式' : '自动回复模式')
   } catch (e: any) { toast.error(`回复模式切换失败: ${e}`) }
+}
+
+async function saveReviewerGoal() {
+  if (!reviewerGoalUpdatable.value) return
+  reviewerGoalSaving.value = true
+  try {
+    const r = await fetch(`/api/v1/sessions/${sessionId.value}/reviewer-task-goal`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_goal: reviewerGoalDraft.value }) })
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) { toast.error(`Reviewer 目标更新失败: ${data.detail || r.status}`); return }
+    reviewerGoalSnapshotAtSave = reviewerTaskGoal.value
+    reviewerGoalSaved.value = data.task_goal
+    reviewerGoalDraft.value = data.task_goal
+    reviewerGoalDirty.value = false
+    toast.success('Reviewer 目标已更新')
+    fetchLocalSession()
+  } catch (e: any) { toast.error(`Reviewer 目标更新失败: ${e}`) }
+  finally { reviewerGoalSaving.value = false }
 }
 
 async function doInject() {
@@ -1763,14 +1805,17 @@ function getInputPlaceholder(): string {
                   <div v-if="selectedAgent.startedAt" class="agent-detail-line">开始：{{ new Date(selectedAgent.startedAt).toLocaleTimeString() }}</div>
                   <div v-if="selectedAgent.endedAt" class="agent-detail-line">结束：{{ new Date(selectedAgent.endedAt).toLocaleTimeString() }}</div>
                   <div v-if="selectedAgent.dispatchContent" class="agent-detail-prompt">{{ selectedAgent.dispatchContent }}</div>
-                  <div v-if="selectedAgent.role === 'reviewer' && reviewerTaskGoal" class="agent-detail-reviewer">
-                    <n-flex align="center" justify="space-between" :size="8">
-                      <n-text depth="3">Reviewer 目标</n-text>
-                      <n-button size="tiny" quaternary @click="showReviewerTaskGoal = !showReviewerTaskGoal">
-                        {{ showReviewerTaskGoal ? '收起' : '展开' }}
-                      </n-button>
-                    </n-flex>
-                    <pre v-if="showReviewerTaskGoal" class="reviewer-task-text">{{ reviewerTaskGoal }}</pre>
+                  <div v-if="selectedAgent.role === 'reviewer'" class="agent-detail-reviewer">
+                    <n-text depth="3">Reviewer 目标</n-text>
+                    <n-input
+                      v-model:value="reviewerGoalDraft"
+                      type="textarea"
+                      :autosize="{ minRows: 3, maxRows: 10 }"
+                      placeholder="描述本会话的验收标准"
+                      @update:value="reviewerGoalDirty = true"
+                    />
+                    <span class="reviewer-goal-hint">更新自下一次评审起生效</span>
+                    <n-button size="small" type="primary" :disabled="!reviewerGoalUpdatable" @click="saveReviewerGoal">更新</n-button>
                   </div>
                 </n-modal>
               </n-flex>
@@ -2113,8 +2158,9 @@ function getInputPlaceholder(): string {
 .session-meta-stats span { color:#94a3b8; font-size:11px; }
 .session-meta-stats strong { overflow:hidden; color:#f8fafc; font-size:13px; font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
 .session-stat-card, .agent-topology-card { border:1px solid rgba(148,163,184,.18) !important; border-radius:12px; }
-.agent-detail-reviewer { margin-top:10px; }
-.reviewer-task-text { max-height:180px; overflow-y:auto; margin:10px 0 0; padding:8px; border:1px solid rgba(148,163,184,.16); border-radius:8px; background:rgba(148,163,184,.045); color:var(--workflow-controller-text, #f8fafc); font-size:12px; line-height:1.6; white-space:pre-wrap; }
+.agent-detail-reviewer { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.reviewer-goal-hint { color:#94a3b8; font-size:11px; }
+.agent-detail-reviewer > .n-button { align-self:flex-end; }
 .subagent-context-card { border:1px solid rgba(148,163,184,.18) !important; border-radius:12px; }
 .subagent-context-note { display:block; font-size:11px; line-height:1.5; margin-bottom:12px; }
 .subagent-context-list { display:grid; gap:8px; }

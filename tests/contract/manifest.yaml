@@ -35,6 +35,7 @@ routes:
     - [POST, "/api/v1/sessions/{session_id}/play", [409]]
     - [POST, "/api/v1/sessions/{session_id}/resume", [400, 409]]
     - [PUT, "/api/v1/sessions/{session_id}/reviewer-mode", [400]]
+    - [PUT, "/api/v1/sessions/{session_id}/reviewer-task-goal", [400]]
     - [POST, "/api/v1/sessions/{session_id}/restart", [400, 409]]
     - [DELETE, "/api/v1/sessions/{session_id}", [400, 500]]
     - [POST, "/api/v1/sessions/{session_id}/inject", [409]]

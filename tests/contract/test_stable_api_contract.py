@@ -115,6 +115,7 @@ def _fake_core_api() -> SimpleNamespace:
         send_message=AsyncMock(return_value=False),
         delete=AsyncMock(return_value={"ok": True}),
         set_session_reviewer_mode=AsyncMock(return_value=None),
+        set_session_reviewer_task_goal=AsyncMock(return_value="新目标"),
     )
     config = SimpleNamespace(
         update_config=MagicMock(return_value={}),
@@ -240,6 +241,11 @@ _STATUS_CASES: dict[
         "/api/v1/sessions/s1/reviewer-mode",
         {"mode": "x"},
         _reject("session", "set_session_reviewer_mode", ValueError("bad mode")),
+    ),
+    ("PUT", "/api/v1/sessions/{session_id}/reviewer-task-goal", 400): (
+        "/api/v1/sessions/s1/reviewer-task-goal",
+        {"task_goal": " "},
+        _reject("session", "set_session_reviewer_task_goal", ValueError("blank goal")),
     ),
     ("POST", "/api/v1/sessions/{session_id}/restart", 400): (
         "/api/v1/sessions/s1/restart",

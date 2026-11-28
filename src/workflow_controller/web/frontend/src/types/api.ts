@@ -41,7 +41,7 @@ export interface SessionInfo {
   waiting_for_auto_reply_fallback?: boolean
   /** 会话自身 reviewer 开关；null/undefined = 未配置（回落全局 config）。 */
   reviewer_enabled?: boolean | null
-  /** 会话启动时冻结的 reviewer 任务目标；null = 旧快照缺字段。 */
+  /** 会话当前生效的 reviewer 任务目标（会话内可更新）；null = 旧快照缺字段。 */
   reviewer_task_goal?: string | null
   provider_index?: number | null
   reviewer_provider_index?: number | null
