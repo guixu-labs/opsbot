@@ -251,9 +251,10 @@ const reviewerEnabled = ref(true)
 const sessionReviewerEnabled = computed(
   () => session.value?.reviewer_enabled ?? reviewerEnabled.value,
 )
-// Reviewer 目标编辑：生效值随会话快照刷新，本端刚保存的值在 SSE 快照到达前优先
+// Reviewer 目标编辑：生效值以会话快照为准，本端刚保存的值只在「保存后 → 快照追平前」优先
 const reviewerTaskGoal = computed(() => session.value?.reviewer_task_goal?.trim() || '')
 const reviewerGoalSaved = ref<string | null>(null)
+let reviewerGoalSnapshotAtSave = ''
 const appliedReviewerGoal = computed(() => reviewerGoalSaved.value ?? reviewerTaskGoal.value)
 const reviewerGoalDraft = ref('')
 const reviewerGoalDirty = ref(false)
@@ -263,6 +264,12 @@ const reviewerGoalUpdatable = computed(() => {
   return draft !== '' && draft !== appliedReviewerGoal.value && !reviewerGoalSaving.value
 })
 watch(sessionId, () => { reviewerGoalSaved.value = null; reviewerGoalDirty.value = false })
+// 快照离开保存时的值（追平本端保存值，或被其他端改成新值）后，本端优先结束
+watch(reviewerTaskGoal, (goal) => {
+  if (reviewerGoalSaved.value !== null && goal !== reviewerGoalSnapshotAtSave) {
+    reviewerGoalSaved.value = null
+  }
+})
 // 生效值变化只同步未编辑的草稿，不覆盖用户正在输入的内容
 watch(appliedReviewerGoal, (goal) => {
   if (!reviewerGoalDirty.value) reviewerGoalDraft.value = goal
@@ -1419,6 +1426,7 @@ async function saveReviewerGoal() {
     const r = await fetch(`/api/v1/sessions/${sessionId.value}/reviewer-task-goal`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_goal: reviewerGoalDraft.value }) })
     const data = await r.json().catch(() => ({}))
     if (!r.ok) { toast.error(`Reviewer 目标更新失败: ${data.detail || r.status}`); return }
+    reviewerGoalSnapshotAtSave = reviewerTaskGoal.value
     reviewerGoalSaved.value = data.task_goal
     reviewerGoalDraft.value = data.task_goal
     reviewerGoalDirty.value = false

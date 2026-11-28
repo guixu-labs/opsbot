@@ -327,13 +327,23 @@ describe('SessionDetailView — Reviewer 状态', () => {
     mockSessions.value = []
   })
 
-  it('Reviewer 目标以生效值起稿，修改后「更新」调用接口并以响应值回到禁用态', async () => {
-    await enableRealTopology()
+  // Reviewer 目标编辑区的元素与输入辅助（弹层挂到了 body 下）
+  const goalArea = () => document.body.querySelector('.agent-detail-reviewer')!
+  const goalTextarea = () => goalArea().querySelector('textarea') as HTMLTextAreaElement
+  const goalUpdateBtn = () =>
+    [...goalArea().querySelectorAll('button')].find(b => b.textContent?.trim() === '更新') as HTMLButtonElement
+  async function typeGoal(text: string) {
+    goalTextarea().value = text
+    goalTextarea().dispatchEvent(new Event('input'))
+    await flushPromises()
+  }
+  // PUT 返回指定的保存值，其余请求沿用 mockFetchWithRun 的应答
+  function mockGoalSave(savedGoal: string) {
     mockFetchWithRun(null)
     const base = globalThis.fetch
     const put = vi.fn().mockResolvedValue({
       ok: true,
-      json: vi.fn().mockResolvedValue({ ok: true, task_goal: '收窄后的目标' }),
+      json: vi.fn().mockResolvedValue({ ok: true, task_goal: savedGoal }),
     })
     globalThis.fetch = vi.fn().mockImplementation((url: string, init?: any) => {
       if (init?.method === 'PUT') return put(url, init)
@@ -342,6 +352,12 @@ describe('SessionDetailView — Reviewer 状态', () => {
       }
       return base(url, init)
     })
+    return put
+  }
+
+  it('Reviewer 目标以生效值起稿，修改后「更新」调用接口并以响应值回到禁用态', async () => {
+    await enableRealTopology()
+    const put = mockGoalSave('收窄后的目标')
     const wrapper = await mountSessionDetail(makeSession({
       reviewer_enabled: true,
       reviewer_task_goal: '原目标',
@@ -349,18 +365,12 @@ describe('SessionDetailView — Reviewer 状态', () => {
 
     ;(wrapper.vm as any).onSelectAgent('reviewer')
     await flushPromises()
-    const area = () => document.body.querySelector('.agent-detail-reviewer')!
-    const textarea = () => area().querySelector('textarea')!
-    const updateBtn = () =>
-      [...area().querySelectorAll('button')].find(b => b.textContent?.trim() === '更新') as HTMLButtonElement
-    expect(textarea().value).toBe('原目标')
-    expect(updateBtn().disabled).toBe(true)
+    expect(goalTextarea().value).toBe('原目标')
+    expect(goalUpdateBtn().disabled).toBe(true)
 
-    textarea().value = '收窄后的目标'
-    textarea().dispatchEvent(new Event('input'))
-    await flushPromises()
-    expect(updateBtn().disabled).toBe(false)
-    updateBtn().click()
+    await typeGoal('收窄后的目标')
+    expect(goalUpdateBtn().disabled).toBe(false)
+    goalUpdateBtn().click()
     await flushPromises()
 
     expect(put).toHaveBeenCalledTimes(1)
@@ -368,9 +378,40 @@ describe('SessionDetailView — Reviewer 状态', () => {
     expect(url).toBe('/api/v1/sessions/sess-1/reviewer-task-goal')
     expect(init.method).toBe('PUT')
     expect(JSON.parse(init.body)).toEqual({ task_goal: '收窄后的目标' })
-    expect(textarea().value).toBe('收窄后的目标')
-    expect(updateBtn().disabled).toBe(true)
+    expect(goalTextarea().value).toBe('收窄后的目标')
+    expect(goalUpdateBtn().disabled).toBe(true)
     expect(mockToast.success).toHaveBeenCalledWith('Reviewer 目标已更新')
+    wrapper.unmount()
+  })
+
+  it('本端保存后另一端改了目标：以会话当前值起稿，按钮按当前值判断', async () => {
+    await enableRealTopology()
+    mockGoalSave('X')
+    const wrapper = await mountSessionDetail(makeSession({
+      reviewer_enabled: true,
+      reviewer_task_goal: '原目标',
+    }))
+
+    ;(wrapper.vm as any).onSelectAgent('reviewer')
+    await flushPromises()
+    await typeGoal('X')
+    goalUpdateBtn().click()
+    await flushPromises()
+    // 快照尚未追平：这段窗口内以本端保存值为准，按钮保持禁用
+    expect(goalUpdateBtn().disabled).toBe(true)
+
+    // 另一端把目标改成 Y，本端收到新的会话快照
+    mockSessions.value = [makeSession({ reviewer_enabled: true, reviewer_task_goal: 'Y' })]
+    await flushPromises()
+    ;(wrapper.vm as any).showAgentDetail = false
+    await flushPromises()
+    ;(wrapper.vm as any).onSelectAgent('reviewer')
+    await flushPromises()
+    expect(goalTextarea().value).toBe('Y')
+    await typeGoal('X')
+    expect(goalUpdateBtn().disabled).toBe(false)
+    await typeGoal('Y')
+    expect(goalUpdateBtn().disabled).toBe(true)
     wrapper.unmount()
   })
 
