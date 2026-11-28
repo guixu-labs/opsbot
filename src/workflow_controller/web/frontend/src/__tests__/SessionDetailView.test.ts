@@ -327,63 +327,56 @@ describe('SessionDetailView — Reviewer 状态', () => {
     mockSessions.value = []
   })
 
-  it('Reviewer 节点详情显示会话冻结的审查目标，展开后保留全文', async () => {
+  it('Reviewer 目标以生效值起稿，修改后「更新」调用接口并以响应值回到禁用态', async () => {
     await enableRealTopology()
-    const reviewerEvent = {
-      session_id: 'sess-1',
-      timestamp: '2026-11-18T00:00:00',
-      event_type: 'log_auto',
-      data: { hook: 'stop_hook_llm', decision: 'block' },
-    }
     mockFetchWithRun(null)
-    globalThis.fetch = vi.fn().mockImplementation((url: string) => Promise.resolve({
+    const base = globalThis.fetch
+    const put = vi.fn().mockResolvedValue({
       ok: true,
-      json: vi.fn().mockResolvedValue(
-        url.includes('/api/v1/events')
-          ? { events: [reviewerEvent] }
-          : {},
-      ),
-    }))
+      json: vi.fn().mockResolvedValue({ ok: true, task_goal: '收窄后的目标' }),
+    })
+    globalThis.fetch = vi.fn().mockImplementation((url: string, init?: any) => {
+      if (init?.method === 'PUT') return put(url, init)
+      if (url.includes('/api/v1/events')) {
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ events: [] }) })
+      }
+      return base(url, init)
+    })
     const wrapper = await mountSessionDetail(makeSession({
       reviewer_enabled: true,
-      reviewer_task_goal: '第一行目标\n第二行目标',
+      reviewer_task_goal: '原目标',
     }))
 
-    expect(wrapper.find('.reviewer-task-text').exists()).toBe(false)
     ;(wrapper.vm as any).onSelectAgent('reviewer')
     await flushPromises()
-    expect((wrapper.vm as any).selectedAgent?.role).toBe('reviewer')
-    expect((wrapper.vm as any).showAgentDetail).toBe(true)
-    expect(document.body.textContent).toContain('Reviewer 目标')
-    const expand = [...document.body.querySelectorAll('button')].find(b => b.textContent === '展开')
-    expect(expand).toBeTruthy()
-    expand!.click()
-    await new Promise(resolve => setTimeout(resolve, 0))
-    expect(document.body.querySelector('.reviewer-task-text')?.textContent).toBe('第一行目标\n第二行目标')
-    ;(wrapper.vm as any).showAgentDetail = false
+    const area = () => document.body.querySelector('.agent-detail-reviewer')!
+    const textarea = () => area().querySelector('textarea')!
+    const updateBtn = () =>
+      [...area().querySelectorAll('button')].find(b => b.textContent?.trim() === '更新') as HTMLButtonElement
+    expect(textarea().value).toBe('原目标')
+    expect(updateBtn().disabled).toBe(true)
+
+    textarea().value = '收窄后的目标'
+    textarea().dispatchEvent(new Event('input'))
     await flushPromises()
-    ;(wrapper.vm as any).onSelectAgent('reviewer')
+    expect(updateBtn().disabled).toBe(false)
+    updateBtn().click()
     await flushPromises()
-    expect(document.body.querySelector('.reviewer-task-text')).toBeNull()
+
+    expect(put).toHaveBeenCalledTimes(1)
+    const [url, init] = put.mock.calls[0]
+    expect(url).toBe('/api/v1/sessions/sess-1/reviewer-task-goal')
+    expect(init.method).toBe('PUT')
+    expect(JSON.parse(init.body)).toEqual({ task_goal: '收窄后的目标' })
+    expect(textarea().value).toBe('收窄后的目标')
+    expect(updateBtn().disabled).toBe(true)
+    expect(mockToast.success).toHaveBeenCalledWith('Reviewer 目标已更新')
     wrapper.unmount()
   })
 
-  it('reviewer_task_goal 为空时详情不渲染审查目标区域', async () => {
+  it('reviewer_task_goal 为空时仍渲染目标编辑器，空白草稿下「更新」禁用', async () => {
     await enableRealTopology()
     mockFetchWithRun(null)
-    globalThis.fetch = vi.fn().mockImplementation((url: string) => Promise.resolve({
-      ok: true,
-      json: vi.fn().mockResolvedValue(
-        url.includes('/api/v1/events')
-          ? { events: [{
-              session_id: 'sess-1',
-              timestamp: '2026-11-18T00:00:00',
-              event_type: 'log_auto',
-              data: { hook: 'stop_hook_llm', decision: 'block' },
-            }] }
-          : {},
-      ),
-    }))
     const wrapper = await mountSessionDetail(makeSession({
       reviewer_enabled: true,
       reviewer_task_goal: null,
@@ -391,8 +384,11 @@ describe('SessionDetailView — Reviewer 状态', () => {
 
     ;(wrapper.vm as any).onSelectAgent('reviewer')
     await flushPromises()
-    expect(document.body.querySelector('.agent-detail-reviewer')).toBeNull()
-    expect([...document.body.querySelectorAll('button')].some(b => b.textContent === '展开')).toBe(false)
+    const area = document.body.querySelector('.agent-detail-reviewer')!
+    expect(area).not.toBeNull()
+    expect(area.querySelector('textarea')!.value).toBe('')
+    const updateBtn = [...area.querySelectorAll('button')].find(b => b.textContent?.trim() === '更新') as HTMLButtonElement
+    expect(updateBtn.disabled).toBe(true)
     wrapper.unmount()
   })
 })

@@ -463,3 +463,35 @@ async def test_config_update_kernel_validation_error_returns_400_and_skips_domai
         )
     assert exc_info.value.status_code == 400
     assert saves == []  # 内核校验失败在先，领域段不落盘
+
+
+async def test_set_session_reviewer_task_goal_returns_stored_value() -> None:
+    """reviewer-task-goal 路由转调 SessionAPI，并回显保存后的值。"""
+    session = AsyncMock()
+    session.set_session_reviewer_task_goal = AsyncMock(return_value="新目标")
+    request = SimpleNamespace(
+        app=SimpleNamespace(state=SimpleNamespace(api=SimpleNamespace(session=session))),
+    )
+
+    resp = await sessions_routes.set_session_reviewer_task_goal(
+        "s1", {"task_goal": "  新目标 "}, request
+    )
+
+    assert resp == {"ok": True, "task_goal": "新目标"}
+    session.set_session_reviewer_task_goal.assert_awaited_once_with("s1", "  新目标 ")
+
+
+async def test_set_session_reviewer_task_goal_rejects_missing_or_non_string_goal() -> None:
+    """task_goal 缺失或不是字符串在路由层即 400，不触达 SessionAPI。"""
+    session = AsyncMock()
+    session.set_session_reviewer_task_goal = AsyncMock(return_value="新目标")
+    request = SimpleNamespace(
+        app=SimpleNamespace(state=SimpleNamespace(api=SimpleNamespace(session=session))),
+    )
+
+    for body in ({}, {"task_goal": None}, {"task_goal": 3}):
+        with pytest.raises(HTTPException) as exc_info:
+            await sessions_routes.set_session_reviewer_task_goal("s1", body, request)
+        assert exc_info.value.status_code == 400
+
+    session.set_session_reviewer_task_goal.assert_not_awaited()

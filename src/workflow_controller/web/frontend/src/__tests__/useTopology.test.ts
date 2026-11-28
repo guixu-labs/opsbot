@@ -174,6 +174,31 @@ describe('deriveTopology — 静默终止子代理归档', () => {
   })
 })
 
+describe('deriveTopology — reviewer 常驻', () => {
+  it('reviewer 开启：尚无评审事件时节点即存在（idle），调用树不为空', () => {
+    const topo = deriveTopology([], session('idle'), true)
+    const reviewer = topo!.nodes.find((n) => n.role === 'reviewer')
+    expect(reviewer?.status).toBe('idle')
+    expect(reviewer?.startedAt).toBeNull()
+    expect(topo!.edges.find((e) => e.type === 'feedback')?.status).toBe('stopped')
+    expect(topo!.reviewerDecisions).toBe(0)
+  })
+
+  it('首个评审事件转 running 并记起点，let_exit 转 completed', () => {
+    const events = [ev('log_auto', t(5), { hook: 'stop_hook_llm', decision: 'let_exit' })]
+    const topo = deriveTopology(events, session('running'), true)
+    const reviewer = topo!.nodes.find((n) => n.role === 'reviewer')!
+    expect(reviewer.status).toBe('completed')
+    expect(reviewer.startedAt).toBe(new Date(t(5)).getTime())
+    expect(reviewer.endedAt).toBe(new Date(t(5)).getTime())
+    expect(topo!.edges.find((e) => e.type === 'feedback')?.status).toBe('completed')
+  })
+
+  it('reviewer 关闭的非运行会话没有子代理时仍无调用树', () => {
+    expect(deriveTopology([], session('idle'), false)).toBeNull()
+  })
+})
+
 describe('deriveTopology — 重建合成事件的 agent_name label', () => {
   it('subagent_start 带 agent_name 时 label 优先用它', () => {
     const events = [

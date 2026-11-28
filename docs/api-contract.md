@@ -3,7 +3,7 @@
 > 本文档由 `tests/contract/manifest.yaml` 生成；改动清单后运行
 > `python scripts/generate_api_contract_doc.py` 再提交，生成校验测试会拦截未同步的漂移。
 
-## Stable API — 已承担兼容责任；只允许向后兼容地增加端点、字段与事件类型（58 条）
+## Stable API — 已承担兼容责任；只允许向后兼容地增加端点、字段与事件类型（59 条）
 
 | 方法 | 路径 | 登记状态码 |
 |---|---|---|
@@ -37,6 +37,7 @@
 | POST | `/api/v1/sessions/{session_id}/play` | 409 |
 | POST | `/api/v1/sessions/{session_id}/resume` | 400, 409 |
 | PUT | `/api/v1/sessions/{session_id}/reviewer-mode` | 400 |
+| PUT | `/api/v1/sessions/{session_id}/reviewer-task-goal` | 400 |
 | POST | `/api/v1/sessions/{session_id}/restart` | 400, 409 |
 | DELETE | `/api/v1/sessions/{session_id}` | 400, 500 |
 | POST | `/api/v1/sessions/{session_id}/inject` | 409 |

@@ -113,8 +113,35 @@ export function deriveTopology(
     model: null,
   }
 
-  let reviewerNode: TopologyNode | null = null
+  // reviewer 常驻：开启即有节点（idle），首个评审事件再起跑
+  const reviewerNode: TopologyNode | null = reviewerEnabled
+    ? {
+        id: 'reviewer',
+        role: 'reviewer',
+        agentType: 'reviewer',
+        label: 'Reviewer',
+        status: 'idle',
+        startedAt: null,
+        endedAt: null,
+        tokens: 0,
+        toolCallCount: 0,
+        iteration: 0,
+        messageCount: 0,
+        dispatchContent: null,
+        model: null,
+      }
+    : null
   let reviewerDecisionCount = 0
+  if (reviewerNode) {
+    nodes.push(reviewerNode)
+    edges.push({
+      fromId: 'reviewer',
+      toId: 'main',
+      type: 'feedback',
+      status: 'stopped',
+      label: 'feedback',
+    })
+  }
 
   let globalStart = Infinity
   let globalEnd = 0
@@ -256,30 +283,12 @@ export function deriveTopology(
     }
 
     if (reviewerEnabled && e.event_type === 'log_auto' && isReviewerHook(d)) {
-      if (!reviewerNode) {
-        reviewerNode = {
-          id: 'reviewer',
-          role: 'reviewer',
-          agentType: 'reviewer',
-          label: 'Reviewer',
-          status: 'running',
-          startedAt: Number.isNaN(ts) ? null : ts,
-          endedAt: null,
-          tokens: 0,
-          toolCallCount: 0,
-          iteration: e.iteration || 0,
-          messageCount: 0,
-          dispatchContent: null,
-          model: null,
-        }
-        nodes.push(reviewerNode)
-        edges.push({
-          fromId: 'reviewer',
-          toId: 'main',
-          type: 'feedback',
-          status: 'running',
-          label: 'feedback',
-        })
+      if (reviewerDecisionCount === 0) {
+        reviewerNode!.status = 'running'
+        reviewerNode!.startedAt = Number.isNaN(ts) ? null : ts
+        reviewerNode!.iteration = e.iteration || 0
+        const fbEdge = feedbackEdgeOf(edges)
+        if (fbEdge) fbEdge.status = 'running'
       }
       reviewerDecisionCount++
       const decision = d.decision
