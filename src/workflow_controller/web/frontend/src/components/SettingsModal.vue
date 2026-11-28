@@ -130,6 +130,7 @@ async function loadConfig() {
   }
   draftBrandName.value = config.value.brand_name
   if (config.value?.hook_server) config.value.hook_server.enabled = config.value.hook_server.enabled ?? true
+  if (config.value?.reviewer) config.value.reviewer.max_tokens = config.value.reviewer.max_tokens ?? 2048
   if (!config.value?.watchdog) config.value.watchdog = { enabled: true, subagent_timeout_seconds: 1800, track_file: '', file_stall_threshold: 3, track_keyword_file: '', track_keyword: '' }
   if (!config.value.context_bay) config.value.context_bay = { repo_url: '', snapshot_paths: [] }
 }
@@ -1062,6 +1063,9 @@ function onDirSelected(path: string) {
                 <span style="font-size:12px;color:var(--workflow-controller-text-muted, #6f6f6f)">审核模型使用 Dashboard 中选择的供应商的模型。</span>
                 <n-form-item label="超时时间（秒）">
                   <n-input-number v-model:value="config.reviewer.timeout_seconds" style="width:150px" />
+                </n-form-item>
+                <n-form-item label="Max tokens">
+                  <n-input-number v-model:value="config.reviewer.max_tokens" :min="2048" :step="1024" style="width:150px" />
                 </n-form-item>
                 <n-form-item label="回复模式">
                   <n-select

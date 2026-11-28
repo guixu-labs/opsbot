@@ -18,16 +18,21 @@ import { resolveReviewerThinking } from '../utils/reviewerConfig'
 describe('reviewer thinking defaults', () => {
   it('prefers explicit project settings', () => {
     expect(resolveReviewerThinking(
-      { thinking_mode: 'disabled', thinking_budget_tokens: 4096 },
-      { thinking_mode: 'enabled', thinking_budget_tokens: 8192 },
-    )).toEqual({ mode: 'disabled', enabled: false, budgetTokens: 4096 })
+      { thinking_mode: 'disabled', thinking_budget_tokens: 4096, max_tokens: 3072 },
+      { thinking_mode: 'enabled', thinking_budget_tokens: 8192, max_tokens: 8192 },
+    )).toEqual({ mode: 'disabled', enabled: false, budgetTokens: 4096, maxTokens: 3072 })
   })
 
   it('falls back through global config to built-in defaults', () => {
     expect(resolveReviewerThinking(
-      { thinking_mode: null, thinking_budget_tokens: null },
-      { thinking_mode: 'adaptive', thinking_budget_tokens: 8192 },
-    )).toEqual({ mode: 'adaptive', enabled: false, budgetTokens: 8192 })
-    expect(resolveReviewerThinking()).toEqual({ mode: 'disabled', enabled: false, budgetTokens: 2048 })
+      { thinking_mode: null, thinking_budget_tokens: null, max_tokens: null },
+      { thinking_mode: 'adaptive', thinking_budget_tokens: 8192, max_tokens: 8192 },
+    )).toEqual({ mode: 'adaptive', enabled: false, budgetTokens: 8192, maxTokens: 8192 })
+    expect(resolveReviewerThinking()).toEqual({
+      mode: 'disabled',
+      enabled: false,
+      budgetTokens: 2048,
+      maxTokens: 2048,
+    })
   })
 })

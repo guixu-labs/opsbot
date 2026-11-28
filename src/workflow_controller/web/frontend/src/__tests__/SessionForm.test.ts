@@ -42,6 +42,7 @@ async function mountExpandedForm(evaluator: string | null, runtime?: string) {
     reviewerEnabled: false,
     reviewerThinkingMode: 'omitted',
     reviewerThinkingBudget: 2048,
+    reviewerMaxTokens: 2048,
     evaluator,
   })
   const wrapper = mount(SessionForm, { props: { modelValue: form, projectConfigLoaded: true } })
@@ -247,6 +248,34 @@ describe('SessionForm evaluator hint', () => {
     mockAuthState.value.providers = []
   })
 
+  it('uses matching reviewer token input controls', async () => {
+    const { wrapper, form } = await mountExpandedForm(null)
+    form.reviewerEnabled = true
+    form.reviewerThinkingMode = 'enabled'
+    form.reviewerMaxTokens = 3072
+    await nextTick()
+
+    const tokenValues = [form.reviewerThinkingBudget, form.reviewerMaxTokens]
+      .filter(value => value != null) as Array<number | null>
+    const tokenInputs = wrapper.findAllComponents(NInputNumber).filter(input =>
+      tokenValues.includes(input.props('value') as number | null))
+    expect(tokenInputs).toHaveLength(2)
+    for (const input of tokenInputs) {
+      expect(input.props('step')).toBe(1024)
+      expect((input.props() as Record<string, unknown>).controls).not.toBe(false)
+    }
+    const budgetInput = tokenInputs.find(
+      input => input.props('value') === form.reviewerThinkingBudget
+    )
+    const maxTokensInput = tokenInputs.find(
+      input => input.props('value') === form.reviewerMaxTokens
+    )
+    expect(budgetInput?.props('min')).toBe(1024)
+    expect(maxTokensInput?.props('min')).toBe(2048)
+    wrapper.unmount()
+    mockAuthState.value.providers = []
+  })
+
   it('keeps the legacy thinking switch for replay forms', async () => {
     const SessionForm = (await import('../components/SessionForm.vue')).default
     const form = reactive<TestSessionForm>({
@@ -257,6 +286,7 @@ describe('SessionForm evaluator hint', () => {
       reviewerEnabled: true,
       reviewerThinking: false,
       reviewerThinkingBudget: 2048,
+      reviewerMaxTokens: 2048,
       evaluator: null,
     })
     const wrapper = mount(SessionForm, { props: { modelValue: form, projectConfigLoaded: true } })

@@ -141,6 +141,15 @@ async def start_session(body: dict[str, Any], request: Request) -> dict[str, Any
     evaluator = (body.get("evaluator") or "").strip() or None
     max_iterations = body.get("max_iterations")
     reviewer_task_goal = (body.get("reviewer_task_goal") or "").strip() or None
+    reviewer_kwargs = {
+        "model": reviewer_model,
+        "task_goal": reviewer_task_goal,
+        "provider_index": reviewer_provider_index,
+        "enabled": reviewer_enabled,
+        "thinking_mode": reviewer_thinking_mode,
+        "thinking_budget_tokens": reviewer_thinking_budget_tokens,
+    }
+    reviewer_kwargs["max_tokens"] = body.get("reviewer_max_tokens")
     try:
         return await api.session.start(
             project_dir,
@@ -152,14 +161,7 @@ async def start_session(body: dict[str, Any], request: Request) -> dict[str, Any
             evaluator=evaluator,
             max_iterations=max_iterations,
             provider_index=provider_index,
-            reviewer=ReviewerStartOverrides(
-                model=reviewer_model,
-                task_goal=reviewer_task_goal,
-                provider_index=reviewer_provider_index,
-                enabled=reviewer_enabled,
-                thinking_mode=reviewer_thinking_mode,
-                thinking_budget_tokens=reviewer_thinking_budget_tokens,
-            ),
+            reviewer=ReviewerStartOverrides(**reviewer_kwargs),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

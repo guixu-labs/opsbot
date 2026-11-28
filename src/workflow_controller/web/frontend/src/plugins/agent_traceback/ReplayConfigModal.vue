@@ -64,6 +64,7 @@ const form = ref<SessionFormState>({
   reviewerEnabled: true,
   reviewerThinking: false,
   reviewerThinkingBudget: 2048,
+  reviewerMaxTokens: 2048,
   systemPrompt: '',
   evaluator: null,
   maxIterations: 10,
@@ -92,6 +93,7 @@ async function loadProjectConfig() {
     const thinking = resolveReviewerThinking(cfg?.reviewer, globalConfig?.reviewer)
     form.value.reviewerThinking = thinking.enabled
     form.value.reviewerThinkingBudget = thinking.budgetTokens
+    form.value.reviewerMaxTokens = thinking.maxTokens
     const detected = originRuntime || cfg?.runtime
     form.value.runtime = detected && REPLAYABLE_RUNTIMES.includes(detected) ? detected : undefined
     form.value.cliWrapper = cfg?.cli_wrapper || ''
@@ -121,6 +123,7 @@ function open() {
     reviewerEnabled: true,
     reviewerThinking: false,
     reviewerThinkingBudget: 2048,
+    reviewerMaxTokens: 2048,
     systemPrompt: '',
     evaluator: null,
     maxIterations: 10,
@@ -154,6 +157,7 @@ async function doTraceback() {
       overrides.reviewer_enabled = f.reviewerEnabled
       overrides.reviewer_thinking_enabled = f.reviewerThinking
       if (f.reviewerThinkingBudget != null) overrides.reviewer_thinking_budget_tokens = f.reviewerThinkingBudget
+      if (f.reviewerMaxTokens != null) overrides.reviewer_max_tokens = f.reviewerMaxTokens
     }
     if (f.systemPrompt) overrides.system_prompt = f.systemPrompt
     if (f.evaluator) overrides.evaluator = f.evaluator

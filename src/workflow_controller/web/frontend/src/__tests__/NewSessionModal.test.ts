@@ -106,12 +106,13 @@ describe('NewSessionModal project defaults', () => {
     mockGraphEnabled.value = false
     mockStart.mockClear()
     const { wrapper, SessionForm } = await mountModal(
-      { loop: {}, reviewer: { thinking_mode: null, thinking_budget_tokens: 4096 } },
-      { reviewer: { thinking_mode: 'enabled', thinking_budget_tokens: 8192 } },
+      { loop: {}, reviewer: { thinking_mode: null, thinking_budget_tokens: 4096, max_tokens: 4096 } },
+      { reviewer: { thinking_mode: 'enabled', thinking_budget_tokens: 8192, max_tokens: 8192 } },
     )
     const form = wrapper.findComponent(SessionForm).props('modelValue') as any
     expect(form.reviewerThinkingMode).toBe('enabled')
     expect(form.reviewerThinkingBudget).toBe(4096)
+    expect(form.reviewerMaxTokens).toBe(4096)
     const startButton = wrapper.findAllComponents(NButton).find(button =>
       button.text().includes('启动会话'))!
     await startButton.trigger('click')
@@ -119,6 +120,7 @@ describe('NewSessionModal project defaults', () => {
     expect(mockStart).toHaveBeenCalledWith('/proj', undefined, undefined, expect.objectContaining({
       reviewer_thinking_mode: 'enabled',
       reviewer_thinking_budget_tokens: 4096,
+      reviewer_max_tokens: 4096,
     }))
     wrapper.unmount()
   })
@@ -182,6 +184,7 @@ describe('NewSessionModal project defaults', () => {
         reviewer_enabled: true,
         reviewer_thinking_enabled: false,
         reviewer_thinking_budget_tokens: 2048,
+        reviewer_max_tokens: 2048,
         cli_wrapper: 'cpx',
         evaluator: 'always_complete',
         max_iterations: 3,
@@ -235,6 +238,7 @@ describe('NewSessionModal project defaults', () => {
     expect(optionsArg.reviewer_enabled).toBe(true)
     expect(optionsArg.reviewer_thinking_mode).toBeUndefined()
     expect(optionsArg.reviewer_thinking_budget_tokens).toBeUndefined()
+    expect(optionsArg.reviewer_max_tokens).toBeUndefined()
     wrapper.unmount()
   })
 })

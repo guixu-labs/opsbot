@@ -32,6 +32,7 @@ export interface TracebackOverrides {
   reviewer_enabled?: boolean
   reviewer_thinking_enabled?: boolean
   reviewer_thinking_budget_tokens?: number
+  reviewer_max_tokens?: number
   system_prompt?: string
   evaluator?: string
   max_iterations?: number
@@ -80,6 +81,7 @@ export function useCheckpoints() {
       if (overrides.reviewer_enabled !== undefined) o.reviewer_enabled = overrides.reviewer_enabled
       if (overrides.reviewer_thinking_enabled !== undefined) o.reviewer_thinking_enabled = overrides.reviewer_thinking_enabled
       if (overrides.reviewer_thinking_budget_tokens != null) o.reviewer_thinking_budget_tokens = overrides.reviewer_thinking_budget_tokens
+      if (overrides.reviewer_max_tokens != null) o.reviewer_max_tokens = overrides.reviewer_max_tokens
       if (overrides.system_prompt) o.system_prompt = overrides.system_prompt
       if (overrides.evaluator) o.evaluator = overrides.evaluator
       if (overrides.max_iterations != null) o.max_iterations = overrides.max_iterations
